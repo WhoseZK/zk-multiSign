@@ -62,4 +62,4 @@ template ZkMultiSign() {
 
     sharingKey <== med0 + med1 + med2;
 }
-component main = ZkMultiSign(3);
+component main = ZkMultiSign();
