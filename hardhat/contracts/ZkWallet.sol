@@ -7,7 +7,7 @@ import {IZkWallet} from "./interfaces/IZkWallet.sol";
 import {MultiSign} from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
-    constructor(uint256 sharingKey) MultiSign(sharingKey) {}
+    constructor(uint256 sharingKey, address iVerifier) MultiSign(sharingKey, iVerifier) {}
 
     function transferToken(
         address tokenAddress,

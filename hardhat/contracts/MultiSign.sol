@@ -9,12 +9,11 @@ abstract contract MultiSign {
     error InvalidSharingKey();
 
     uint256 sharingKey;
-    // verifier contract only deploy once
-    // it can hardcode
-    IVerifier iVerifier = IVerifier(address(0));
+    IVerifier iVerifier;
 
-    constructor(uint256 _sharingKey) {
+    constructor(uint256 _sharingKey, IVerifier _iVerifier) {
         sharingKey = _sharingKey;
+        iVerifier = _iVerifier;
     }
 
     modifier onlyApprove(uint256 publicSignal, uint256[8] calldata proof) {
