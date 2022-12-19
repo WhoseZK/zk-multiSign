@@ -3,13 +3,11 @@ pragma solidity ^0.8.0;
 
 import {IVerifier} from "./interfaces/IVerifier.sol";
 
-abstract contract SSS {
+abstract contract MultiSign {
 
-    error NotOwner();
     error InvalidProof();
     error InvalidSharingKey();
 
-    address owner;
     uint256 sharingKey;
     // verifier contract only deploy once
     // it can hardcode
@@ -17,7 +15,6 @@ abstract contract SSS {
 
     constructor(uint256 _sharingKey) {
         sharingKey = _sharingKey;
-        owner = msg.sender;
     }
 
     modifier onlyApprove(uint256 publicSignal, uint256[8] calldata proof) {
@@ -31,11 +28,11 @@ abstract contract SSS {
     }
 
     /**
-     * @dev override this function if the access to update sharing key
-     * is not the owner
+     * @dev implement this fuction by assigning who has
+     * access to update the sharing key
+     *
      */
-    function setSharingKey(uint256 _sharingKey) external virtual {
-        if (owner != msg.sender) revert NotOwner();
+    function _setSharingKey(uint256 _sharingKey) internal virtual {
         sharingKey = _sharingKey;
     }
 }
