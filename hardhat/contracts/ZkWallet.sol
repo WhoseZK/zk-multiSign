@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IZkWallet} from "./interfaces/IZkWallet.sol";
-import {SSS} from "./SSS.sol";
+import {SSS} from "./MultiSign.sol";
 
-contract ZkWallet is IZkWallet, SSS {
-    constructor(uint256 sharingKey) SSS(sharingKey) {}
+contract ZkWallet is IZkWallet, MultiSign {
+    constructor(uint256 sharingKey) MultiSign(sharingKey) {}
 
     function transferERC20(
         address tokenAddress,
