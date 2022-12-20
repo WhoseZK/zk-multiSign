@@ -23,7 +23,7 @@ const generatePoints = async function(n) {
     }
     
     return {
-        sharingKey: sharingKey,
+        sharingKey: sharingKey.toString(),
         points: points
     }
 } 

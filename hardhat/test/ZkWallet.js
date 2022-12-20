@@ -8,13 +8,14 @@ describe("ZkWallet", function () {
   let erc20;
   let points;
   let sharingKey;
+  const TRANSFER_AMOUNT = 100000;
 
   before(async () => {
     const result = await generatePoints(5);
     points = result.points;
     sharingKey = result.sharingKey;
     
-    contracts = await run("deploy", { sharingKey: sharingKey.toString() });
+    const contracts = await run("deploy", { sharingKey: sharingKey });
     zkWallet = contracts.zkWallet;
     erc20 = contracts.erc20;
   });
@@ -36,24 +37,23 @@ describe("ZkWallet", function () {
       await zkWallet.transferToken(
         zeroAddress,
         destination.address,
-        100000,
+        TRANSFER_AMOUNT,
         public,
         proof,
-        { value: ethers.BigNumber.from(100000) }
+        { value: ethers.BigNumber.from(TRANSFER_AMOUNT) }
       );
       const afterTx = await destination.getBalance();
-      expect(afterTx.sub(beforeTx).toNumber()).to.equal(100000);
+      expect(Number(afterTx.sub(beforeTx))).to.equal(TRANSFER_AMOUNT);
     
       // transfer erc20
-      await erc20.transfer(zkWallet.address, 100000);
       await zkWallet.transferToken(
         erc20.address,
         destination.address,
-        100000,
+        TRANSFER_AMOUNT,
         public,
         proof
       );
-      expect(Number(await erc20.balanceOf(destination.address))).to.equal(100000);
+      expect(Number(await erc20.balanceOf(destination.address))).to.equal(TRANSFER_AMOUNT);
     });
 
     it("If failed in proof", async () => {});

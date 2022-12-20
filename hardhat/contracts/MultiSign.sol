@@ -8,13 +8,15 @@ abstract contract MultiSign {
     error InvalidProof();
     error InvalidSharingKey();
 
+    event UpdateSharingKey(uint256 sharingKey);
+
     uint256 sharingKey;
     // verifier contract only deploy once
     // it can hardcode
     IVerifier private _iVerifier;
 
     constructor(uint256 _sharingKey, IVerifier iVerifier) {
-        sharingKey = _sharingKey;
+        _setSharingKey(_sharingKey);
         _iVerifier = iVerifier;
     }
 
@@ -29,11 +31,12 @@ abstract contract MultiSign {
     }
 
     /**
-     * @dev implement this fuction by assigning who has
+     * @dev MUST implement this fuction by assigning who has
      * access to update the sharing key
      *
      */
     function _setSharingKey(uint256 _sharingKey) internal virtual {
         sharingKey = _sharingKey;
+        emit UpdateSharingKey(sharingKey);
     }
 }
