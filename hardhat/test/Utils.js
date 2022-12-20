@@ -17,11 +17,11 @@ const generatePoints = async function(n) {
     for(let i=0;i<n;i++) {
 
         const x = Fq.random();
-        const y = a2.mul(x).mul(x).add(a1.mul(x)).add(sharingKey);
+        const y = Fq.add(Fq.mul(Fq.mul(a2,x), x), Fq.add(Fq.mul(a1, x), sharingKey));
         
-        points.push(x, y);
+        points.push({x, y});
     }
-
+    
     return {
         sharingKey: sharingKey,
         points: points
@@ -30,12 +30,19 @@ const generatePoints = async function(n) {
 
 const generateProof = async function(point0, point1, point2) {
 
-    const input = {x0: point0.x, y0: point0.y, x1: point1.x, y1: point1.y, x2: point2.x, y2: point2.y}
+    const input = {
+        x0: point0.x,
+        y0: point0.y,
+        x1: point1.x,
+        y1: point1.y,
+        x2: point2.x,
+        y2: point2.y
+    }
     const result = await groth16.fullProve(input, 
-        "./statics/zk-kyc.wasm", "./statics/zkkyc_final.zkey")
+        "./statics/ZkMultiSign.wasm", "./statics/ZkMultiSign.zkey");
 
     return {
-        "public": result.publicSignals,
+        "public": result.publicSignals[0],
         "proof": packToSolidityProof(result.proof)
     }
 }

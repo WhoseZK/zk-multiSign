@@ -2,9 +2,15 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.12.4"
+    "ffjavascript": "^0.2.57",
+    "hardhat": "^2.12.4",
+    "snarkjs": "^0.5.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.8.0"
+    "@openzeppelin/contracts": "^4.8.0",
+    "dotenv": "^16.0.3"
+  },
+  "scripts": {
+    "test": "npx hardhat test test/ZkWallet.js tasks/deploy.js"
   }
 }
