@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import {IZkWallet} from "./interfaces/IZkWallet.sol";
-import {MultiSign} from "./MultiSign.sol";
+import { IVerifier } from "./libraries/Verifier.sol";
+import { IZkWallet } from "./interfaces/IZkWallet.sol";
+import { MultiSign } from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
-    constructor(uint256 sharingKey) MultiSign(sharingKey) {}
+    constructor(uint256 sharingKey, Verifier iVerifier) MultiSign(sharingKey, iVerifier) {}
 
     function transferToken(
         address tokenAddress,
