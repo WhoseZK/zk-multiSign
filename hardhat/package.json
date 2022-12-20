@@ -11,6 +11,6 @@
     "dotenv": "^16.0.3"
   },
   "scripts": {
-    "test": "npx hardhat test test/ZkWallet.js tasks/deploy.js"
+    "test": "npx hardhat test"
   }
 }

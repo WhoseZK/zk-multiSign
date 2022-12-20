@@ -34,6 +34,7 @@ describe("ZkWallet", function () {
       // transfer eth
       const zeroAddress = ethers.constants.AddressZero;
       const beforeTx = await destination.getBalance();
+      console.log(beforeTx)
       await zkWallet.transferToken(
         zeroAddress,
         destination.address,
@@ -43,6 +44,7 @@ describe("ZkWallet", function () {
         { value: ethers.BigNumber.from(TRANSFER_AMOUNT) }
       );
       const afterTx = await destination.getBalance();
+      console.log(afterTx)
       expect(Number(afterTx.sub(beforeTx))).to.equal(TRANSFER_AMOUNT);
     
       // transfer erc20
