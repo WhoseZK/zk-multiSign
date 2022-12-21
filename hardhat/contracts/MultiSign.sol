@@ -9,19 +9,22 @@ abstract contract MultiSign {
     error InvalidSharingKey();
 
     uint256 sharingKey;
+    uint256 hashItems;
     // verifier contract only deploy once
     // it can hardcode
-    Verifier private _iVerifier;
+    Verifier private iVerifier;
 
-    constructor(uint256 _sharingKey, Verifier iVerifier) {
+    constructor(uint256 _sharingKey, uint256 _hashItems, Verifier _iVerifier) {
         sharingKey = _sharingKey;
         iVerifier = _iVerifier;
+        hashItems = _hashItems;
     }
 
-    modifier onlyApprove(uint256 publicSignal, uint256[8] calldata proof) {
+    modifier onlyApprove(uint256 publicSignal, uint256 publicItems, uint256[8] calldata proof) {
         if (publicSignal != sharingKey) revert InvalidSharingKey();
+        if (hashItems != publicItems) revert InvalidSharingKey();
 
-        if(!_iVerifier.verifyProof([proof[0], proof[1]],
+        if(!iVerifier.verifyProof([proof[0], proof[1]],
             [[proof[2], proof[3]], [proof[4], proof[5]]],
             [proof[6], proof[7]],
             [publicSignal])) revert InvalidProof();

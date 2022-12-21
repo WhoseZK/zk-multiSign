@@ -1,5 +1,7 @@
 pragma circom 2.0.0;
 
+include "./node_modules/circomlib/circuits/poseidon.circom";
+
 // polynominal function to power of 3 
 template Lagrange_3() {
 
@@ -7,7 +9,7 @@ template Lagrange_3() {
     signal input x1;
     signal input x2;
 
-    signal output out;
+    signal output out[3];
 
     signal med1;
     signal med2;
@@ -21,8 +23,35 @@ template Lagrange_3() {
     med4 <== med3 * x0;
     med5 <== med1 - med4 + med2;
     
-    out <-- med2 / med5;
-    out * med5 === med2;
+    // sharing
+    out[2] <-- med2 / med5;
+    out[0] * med5 === med2;
+
+    // a1
+    out[1] <-- -1 * med3 / med5;
+    out[1] * med3 === med5 * -1; 
+
+    // a0
+    out[0] <-- 1 / med5;
+    out[0] * med5 === 1;
+}
+
+template CalItem() {
+
+    signal input x[3];
+    signal input y;
+
+    signal output out;
+
+    signal med0;
+    signal med1;
+    signal med2;
+
+    med0 <== x[0] * y0;
+    med1 <== x[1] * y1;
+    med2 <== x[2] * y2;
+
+    out <== med0 + med1 + med2;
 }
 
 // polynominal function to the power of 3
@@ -34,12 +63,9 @@ template ZkMultiSign() {
     signal input y1;
     signal input x2;
     signal input y2;
-
-    signal med0;
-    signal med1;
-    signal med2;
     
     signal output sharingKey;
+    signal output ploynominalItems;
     
     component lagrange0 = Lagrange_3();
     lagrange0.x0 <== x0;
@@ -56,10 +82,27 @@ template ZkMultiSign() {
     lagrange2.x1 <== x0;
     lagrange2.x2 <== x1;
 
-    med0 <== lagrange0.out * y0;
-    med1 <== lagrange1.out * y1;
-    med2 <== lagrange2.out * y2;
+    component calItem_a0 = CalItem();
+    calItem_a0.x[0] <== lagrange0.out[0];
+    calItem_a0.x[1] <== lagrange1.out[0];
+    calItem_a0.x[2] <== lagrange2.out[0];
 
-    sharingKey <== med0 + med1 + med2;
+    component calItem_a1 = CalItem();
+    calItem_a1.x[0] <== lagrange0.out[1];
+    calItem_a1.x[1] <== lagrange1.out[1];
+    calItem_a1.x[2] <== lagrange2.out[1];
+
+    component calItem_a2 = CalItem();
+    calItem_a2.x[0] <== lagrange0.out[2];
+    calItem_a2.x[1] <== lagrange1.out[2];
+    calItem_a2.x[2] <== lagrange2.out[2];
+
+    component poseidon = Poseidon();
+    poseidon.x1 <== calItem_a0.out;
+    poseidon.x2 <== calItem_a1.out;
+
+    ploynominalItems <== poseidon.out;
+    sharingKey <== calItem_a2;
 }
+
 component main = ZkMultiSign();
