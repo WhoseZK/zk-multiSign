@@ -5,31 +5,30 @@ import { IVerifier } from "./interfaces/IVerifier.sol";
 
 abstract contract MultiSign {
 
+    error InvalidPolynominal();
     error InvalidProof();
-    error InvalidSharingKey();
 
-    event UpdateSharingKey(uint256 sharingKey);
+    event UpdatePolynominal(uint256 sharingKey, uint256 hashItem);
 
     uint256 sharingKey;
-    uint256 hashItems;
+    uint256 hashItem;
     // verifier contract only deploy once
     // it can hardcode
     IVerifier private iVerifier;
 
-    constructor(uint256 _sharingKey, uint256 _hashItems, IVerifier _iVerifier) {
-        _setSharingKey(_sharingKey);
+    constructor(uint256 _sharingKey, uint256 _hashItem, IVerifier _iVerifier) {
+        _updatePolynominal(_sharingKey, _hashItem);
         iVerifier = _iVerifier;
-        hashItems = _hashItems;
     }
 
-    modifier onlyApprove(uint256 publicSignal, uint256 publicItems, uint256[8] calldata proof) {
-        if (publicSignal != sharingKey) revert InvalidSharingKey();
-        if (hashItems != publicItems) revert InvalidSharingKey();
+    modifier onlyApprove(uint256[2] calldata publicSignals, uint256[8] calldata proof) {
+        if (publicSignals[0] != sharingKey || 
+            publicSignals[1] != hashItem) revert InvalidPolynominal();
 
         if(!iVerifier.verifyProof([proof[0], proof[1]],
             [[proof[2], proof[3]], [proof[4], proof[5]]],
             [proof[6], proof[7]],
-            [publicSignal])) revert InvalidProof();
+            publicSignals)) revert InvalidProof();
         _;
     }
 
@@ -38,8 +37,9 @@ abstract contract MultiSign {
      * access to update the sharing key
      *
      */
-    function _setSharingKey(uint256 _sharingKey) internal virtual {
+    function _updatePolynominal(uint256 _sharingKey, uint256 _hashItem) internal virtual {
         sharingKey = _sharingKey;
-        emit UpdateSharingKey(sharingKey);
+        hashItem = _hashItem;
+        emit UpdatePolynominal(sharingKey, hashItem);
     }
 }

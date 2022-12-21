@@ -14,9 +14,8 @@ interface IZkWallet {
         uint256[8] calldata proof
     ) external payable;
 
-    function setSharingKey(
-        uint256 _sharingKey,
-        uint256 publicSignal,
+    function updatePolynominal(
+        uint256[2] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 }

@@ -39,7 +39,7 @@ template Lagrange_3() {
 template CalItem() {
 
     signal input x[3];
-    signal input y;
+    signal input y[3];
 
     signal output out;
 
@@ -47,9 +47,9 @@ template CalItem() {
     signal med1;
     signal med2;
 
-    med0 <== x[0] * y0;
-    med1 <== x[1] * y1;
-    med2 <== x[2] * y2;
+    med0 <== x[0] * y[0];
+    med1 <== x[1] * y[1];
+    med2 <== x[2] * y[2];
 
     out <== med0 + med1 + med2;
 }
@@ -86,18 +86,27 @@ template ZkMultiSign() {
     calItem_a0.x[0] <== lagrange0.out[0];
     calItem_a0.x[1] <== lagrange1.out[0];
     calItem_a0.x[2] <== lagrange2.out[0];
+    calItem_a0.y[0] <== y0;
+    calItem_a0.y[1] <== y1;
+    calItem_a0.y[2] <== y2;
 
     component calItem_a1 = CalItem();
     calItem_a1.x[0] <== lagrange0.out[1];
     calItem_a1.x[1] <== lagrange1.out[1];
     calItem_a1.x[2] <== lagrange2.out[1];
+    calItem_a1.y[0] <== y0;
+    calItem_a1.y[1] <== y1;
+    calItem_a1.y[2] <== y2;
 
     component calItem_a2 = CalItem();
     calItem_a2.x[0] <== lagrange0.out[2];
     calItem_a2.x[1] <== lagrange1.out[2];
     calItem_a2.x[2] <== lagrange2.out[2];
+    calItem_a2.y[0] <== y0;
+    calItem_a2.y[1] <== y1;
+    calItem_a2.y[2] <== y2;
 
-    component poseidon = Poseidon();
+    component poseidon = Poseidon(2);
     poseidon.x1 <== calItem_a0.out;
     poseidon.x2 <== calItem_a1.out;
 
