@@ -1,36 +1,67 @@
-const { expect } = require("chai")
-const { run, ethers } = require("hardhat")
-const { generatePoints, generateProof } = require("./Utils")
+const { expect } = require("chai");
+const { run, ethers } = require("hardhat");
+const { generatePoints, generateProof } = require("./Utils");
 
 // TODO finish the test case
 describe("ZkWallet", function () {
+  let zkWallet;
+  let erc20;
+  let points;
+  let sharingKey;
+  const TRANSFER_AMOUNT = 100000;
 
-    let zkWallet;
-    let points;
-    let sharingKey;
+  before(async () => {
+    const result = await generatePoints(5);
+    points = result.points;
+    sharingKey = result.sharingKey;
+    
+    const contracts = await run("deploy", { sharingKey: sharingKey });
+    zkWallet = contracts.zkWallet;
+    erc20 = contracts.erc20;
+  });
 
-    before(async () => {
-        const result = await generatePoints(5);
-        points = result.points;
-        sharingKey = result.sharingKey;
-        zkWallet = await run("deploy", { sharingKey: sharingKey })
-    })
+  describe("ZkWallet", () => {
+    it("Generate proof for sharingKey", async () => {
+      // owner is default signer
+      // using destination account to test recieving tokens instead
+      const [owner, destination] = await ethers.getSigners();
+      const { public, proof } = await generateProof(
+        points[0],
+        points[1],
+        points[2]
+      );
+      
+      // transfer eth
+      const zeroAddress = ethers.constants.AddressZero;
+      const beforeTx = await destination.getBalance();
+      console.log(beforeTx)
+      await zkWallet.transferToken(
+        zeroAddress,
+        destination.address,
+        TRANSFER_AMOUNT,
+        public,
+        proof,
+        { value: ethers.BigNumber.from(TRANSFER_AMOUNT) }
+      );
+      const afterTx = await destination.getBalance();
+      console.log(afterTx)
+      expect(Number(afterTx.sub(beforeTx))).to.equal(TRANSFER_AMOUNT);
+    
+      // transfer erc20
+      await zkWallet.transferToken(
+        erc20.address,
+        destination.address,
+        TRANSFER_AMOUNT,
+        public,
+        proof
+      );
+      expect(Number(await erc20.balanceOf(destination.address))).to.equal(TRANSFER_AMOUNT);
+    });
 
-    describe("ZkWallet", () => {
-        
-        it("Generate proof for sharingKey", async () => {
+    it("If failed in proof", async () => {});
 
-            const proof = generateProof(points[0], points[1], points[2])
-            const tokenAddress = ""
-            const destination = ""
+    it("Reset the sharing Key", async () => {});
 
-            const transaction = await zkWallet.transferToken(tokenAddress, destination, 100000, sharingKey, proof.proof)
-        })
-
-        it("If failed in proof", async () => {})
-
-        it("Reset the sharing Key", async () => {})
-
-        it("Reset the sharing Key but failed in proof", async () => {})
-    })
-})
+    it("Reset the sharing Key but failed in proof", async () => {});
+  });
+});

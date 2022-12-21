@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Verifier } from "./libraries/Verifier.sol";
+import { IVerifier } from "./interfaces/IVerifier.sol";
 
 abstract contract MultiSign {
 
     error InvalidProof();
     error InvalidSharingKey();
 
+    event UpdateSharingKey(uint256 sharingKey);
+
     uint256 sharingKey;
     uint256 hashItems;
     // verifier contract only deploy once
     // it can hardcode
-    Verifier private iVerifier;
+    IVerifier private iVerifier;
 
-    constructor(uint256 _sharingKey, uint256 _hashItems, Verifier _iVerifier) {
-        sharingKey = _sharingKey;
+    constructor(uint256 _sharingKey, uint256 _hashItems, IVerifier _iVerifier) {
+        _setSharingKey(_sharingKey);
         iVerifier = _iVerifier;
         hashItems = _hashItems;
     }
@@ -32,11 +34,12 @@ abstract contract MultiSign {
     }
 
     /**
-     * @dev implement this fuction by assigning who has
+     * @dev MUST implement this fuction by assigning who has
      * access to update the sharing key
      *
      */
     function _setSharingKey(uint256 _sharingKey) internal virtual {
         sharingKey = _sharingKey;
+        emit UpdateSharingKey(sharingKey);
     }
 }
