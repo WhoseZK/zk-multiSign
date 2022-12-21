@@ -10,7 +10,7 @@ interface IZkWallet {
         address tokenAddress,
         address destination,
         uint256 amount,
-        uint256 publicSignal,
+        uint256[2] calldata publicSignals,
         uint256[8] calldata proof
     ) external payable;
 

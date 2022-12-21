@@ -24,16 +24,16 @@ template Lagrange_3() {
     med5 <== med1 - med4 + med2;
     
     // sharing
-    out[2] <-- med2 / med5;
+    out[0] <-- med2 / med5;
     out[0] * med5 === med2;
 
     // a1
     out[1] <-- -1 * med3 / med5;
-    out[1] * med3 === med5 * -1; 
+    out[1] * med5 === -1 * med3; 
 
-    // a0
-    out[0] <-- 1 / med5;
-    out[0] * med5 === 1;
+    // a2
+    out[2] <-- 1 / med5;
+    out[2] * med5 === 1;
 }
 
 template CalItem() {
@@ -82,13 +82,13 @@ template ZkMultiSign() {
     lagrange2.x1 <== x0;
     lagrange2.x2 <== x1;
 
-    component calItem_a0 = CalItem();
-    calItem_a0.x[0] <== lagrange0.out[0];
-    calItem_a0.x[1] <== lagrange1.out[0];
-    calItem_a0.x[2] <== lagrange2.out[0];
-    calItem_a0.y[0] <== y0;
-    calItem_a0.y[1] <== y1;
-    calItem_a0.y[2] <== y2;
+    component calItem_a2 = CalItem();
+    calItem_a2.x[0] <== lagrange0.out[2];
+    calItem_a2.x[1] <== lagrange1.out[2];
+    calItem_a2.x[2] <== lagrange2.out[2];
+    calItem_a2.y[0] <== y0;
+    calItem_a2.y[1] <== y1;
+    calItem_a2.y[2] <== y2;
 
     component calItem_a1 = CalItem();
     calItem_a1.x[0] <== lagrange0.out[1];
@@ -98,20 +98,20 @@ template ZkMultiSign() {
     calItem_a1.y[1] <== y1;
     calItem_a1.y[2] <== y2;
 
-    component calItem_a2 = CalItem();
-    calItem_a2.x[0] <== lagrange0.out[2];
-    calItem_a2.x[1] <== lagrange1.out[2];
-    calItem_a2.x[2] <== lagrange2.out[2];
-    calItem_a2.y[0] <== y0;
-    calItem_a2.y[1] <== y1;
-    calItem_a2.y[2] <== y2;
+    component calItem_a0 = CalItem();
+    calItem_a0.x[0] <== lagrange0.out[0];
+    calItem_a0.x[1] <== lagrange1.out[0];
+    calItem_a0.x[2] <== lagrange2.out[0];
+    calItem_a0.y[0] <== y0;
+    calItem_a0.y[1] <== y1;
+    calItem_a0.y[2] <== y2;
 
     component poseidon = Poseidon(2);
-    poseidon.x1 <== calItem_a0.out;
-    poseidon.x2 <== calItem_a1.out;
+    poseidon.inputs[0] <== calItem_a2.out;
+    poseidon.inputs[1] <== calItem_a1.out;
 
     ploynominalItems <== poseidon.out;
-    sharingKey <== calItem_a2;
+    sharingKey <== calItem_a0.out;
 }
 
 component main = ZkMultiSign();

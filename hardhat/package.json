@@ -2,15 +2,15 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "big-integer": "^1.6.51",
+    "circomlibjs": "^0.0.8",
+    "dotenv": "^16.0.3",
     "ffjavascript": "^0.2.57",
     "hardhat": "^2.12.4",
     "snarkjs": "^0.5.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.8.0",
-    "ffjavascript": "^0.2.57",
-    "snarkjs": "^0.5.0",
-    "dotenv": "^16.0.3"
+    "@openzeppelin/contracts": "^4.8.0"
   },
   "scripts": {
     "test": "npx hardhat test"

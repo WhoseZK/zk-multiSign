@@ -7,15 +7,15 @@ describe("ZkWallet", function () {
   let zkWallet;
   let erc20;
   let points;
-  let sharingKey;
   const TRANSFER_AMOUNT = 100000;
 
   before(async () => {
     const result = await generatePoints(5);
     points = result.points;
-    sharingKey = result.sharingKey;
+    const sharingKey = result.sharingKey;
+    const hashItem = result.hashItem;
     
-    const contracts = await run("deploy", { sharingKey: sharingKey });
+    const contracts = await run("deploy", { sharingKey: sharingKey, hashItem: hashItem });
     zkWallet = contracts.zkWallet;
     erc20 = contracts.erc20;
   });
@@ -34,7 +34,7 @@ describe("ZkWallet", function () {
       // transfer eth
       const zeroAddress = ethers.constants.AddressZero;
       const beforeTx = await destination.getBalance();
-      console.log(beforeTx)
+      console.log(beforeTx);
       await zkWallet.transferToken(
         zeroAddress,
         destination.address,
@@ -44,7 +44,7 @@ describe("ZkWallet", function () {
         { value: ethers.BigNumber.from(TRANSFER_AMOUNT) }
       );
       const afterTx = await destination.getBalance();
-      console.log(afterTx)
+      console.log(afterTx);
       expect(Number(afterTx.sub(beforeTx))).to.equal(TRANSFER_AMOUNT);
     
       // transfer erc20

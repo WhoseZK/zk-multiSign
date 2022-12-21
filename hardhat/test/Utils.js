@@ -1,5 +1,6 @@
 const { ZqField } = require("ffjavascript");
 const { groth16 } = require('snarkjs');
+const { poseidon } = require("circomlibjs");
 
 // Creates the finite field
 const SNARK_FIELD_SIZE = BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
@@ -24,6 +25,7 @@ const generatePoints = async function(n) {
     
     return {
         sharingKey: sharingKey.toString(),
+        hashItem: poseidon([a2, a1]).toString(),
         points: points
     }
 } 
@@ -42,7 +44,7 @@ const generateProof = async function(point0, point1, point2) {
         "./statics/ZkMultiSign.wasm", "./statics/ZkMultiSign.zkey");
 
     return {
-        "public": result.publicSignals[0],
+        "public": result.publicSignals,
         "proof": packToSolidityProof(result.proof)
     }
 }
