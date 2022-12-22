@@ -82,6 +82,7 @@ template ZkMultiSign() {
     lagrange2.x1 <== x0;
     lagrange2.x2 <== x1;
 
+    // a2
     component calItem_a2 = CalItem();
     calItem_a2.x[0] <== lagrange0.out[2];
     calItem_a2.x[1] <== lagrange1.out[2];
@@ -90,6 +91,7 @@ template ZkMultiSign() {
     calItem_a2.y[1] <== y1;
     calItem_a2.y[2] <== y2;
 
+    // a1
     component calItem_a1 = CalItem();
     calItem_a1.x[0] <== lagrange0.out[1];
     calItem_a1.x[1] <== lagrange1.out[1];
@@ -98,6 +100,7 @@ template ZkMultiSign() {
     calItem_a1.y[1] <== y1;
     calItem_a1.y[2] <== y2;
 
+    // sharingKey
     component calItem_a0 = CalItem();
     calItem_a0.x[0] <== lagrange0.out[0];
     calItem_a0.x[1] <== lagrange1.out[0];
