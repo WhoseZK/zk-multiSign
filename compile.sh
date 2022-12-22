@@ -12,6 +12,8 @@ mv ./compile/${name}_js/${name}.wasm ../hardhat/statics
 rm -R ./compile/${name}_js
 snarkjs ${algo} setup ./compile/${name}.r1cs ./compile/trust_setup/pot${version}_final.ptau ./compile/${name}.zkey
 cp ./compile/${name}.zkey ../hardhat/statics
+cp ../hardhat/statics/${name}.zkey ../frontend/public/zkp
+cp ../hardhat/statics/${name}.wasm ../frontend/public/zkp
 snarkjs zkey export verificationkey ./compile/${name}.zkey ./compile/verification/verification_key.json
 
 # export solidity verfier
