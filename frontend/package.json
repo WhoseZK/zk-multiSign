@@ -13,10 +13,16 @@
   "dependencies": {
     "@thirdweb-dev/react": "^3",
     "@thirdweb-dev/sdk": "^3",
+    "big-integer": "^1.6.51",
+    "circomlibjs": "^0.0.8",
     "ethers": "^5.6.8",
+    "ffjavascript": "^0.2.57",
+    "fs": "^0.0.1-security",
     "next": "^13",
     "react": "^18.2",
-    "react-dom": "^18.2"
+    "react-dom": "^18.2",
+    "snarkjs": "^0.5.0",
+    "swr": "^2.0.0"
   },
   "devDependencies": {
     "eslint": "8.11.0",
