@@ -22,7 +22,6 @@ const generatePoints = async function(n) {
         
         points.push({x, y});
     }
-    console.log(points[0]);
     return {
         sharingKey: sharingKey.toString(),
         hashItem: poseidon([a2, a1]).toString(),
@@ -31,8 +30,6 @@ const generatePoints = async function(n) {
 } 
 
 const generateProof = async function(point0, point1, point2, zkp) {
-    console.log(zkp.wasm);
-    console.log(point0)
     const input = {
         x0: point0.x,
         y0: point0.y,

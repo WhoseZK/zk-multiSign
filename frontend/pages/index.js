@@ -1,39 +1,43 @@
-import { ConnectWallet, useAddress, useMetamask } from "@thirdweb-dev/react";
+import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
 import { ethers } from "ethers";
 import { generatePoints, generateProof } from "../src/utils/Utils";
-import Point from "../src/components/Point";
+import Points from "../src/components/Points";
 import useSWR from "swr";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
+const CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+const ABI = [
+  "function transferToken(address tokenAddress, address destination, uint256 amount, uint256[2] calldata publicSignals, uint256[8] calldata proof) external payable",
+  "function updatePolynominal(uint256[2] calldata publicSignals, uint256[8] calldata proof) external",
+];
 
 export default function Home() {
-  const connectWithMetaMask = useMetamask();
-  const {data, error} = useSWR("/api/zkp", fetcher);
-  // leaf
+  const { data, error } = useSWR("/api/zkp", fetcher);
   const address = useAddress();
   const [provider, setProvider] = useState();
   const [contract, setContract] = useState();
+
+  // constructor args
   const [sharingKey, setSharingKey] = useState();
   const [hashItem, setHashItem] = useState();
-  const [tokenAddress, setTokenAddress] = useState();
-  const [destination, setDestination] = useState();
-  const [amount, setAmount] = useState();
   const [points, setPoints] = useState([]);
+
+  // transfer token args
+  const [tokenAddress, setTokenAddress] = useState(
+    ethers.constants.AddressZero
+  );
+  const [destination, setDestination] = useState(address);
+  const [amount, setAmount] = useState();
   const [publicSignals, setPublicSignals] = useState([]);
   const [proof, setProof] = useState([]);
-  const CONTRACT_ADDRESS = "";
-  const ABI = [
-    "function transferToken(address tokenAddress, address destination, uint256 amount, uint256[2] calldata publicSignals, uint256[8] calldata proof) external payable",
-    "function updatePolynominal(uint256[2] calldata publicSignals, uint256[8] calldata proof) external",
-  ];
 
   useEffect(() => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     setProvider(provider);
     setContract(new ethers.Contract(CONTRACT_ADDRESS, ABI, provider));
-  }, [address]);
+  }, []);
 
   const createPoints = async () => {
     const { sharingKey, hashItem, points } = await generatePoints(3);
@@ -43,13 +47,21 @@ export default function Home() {
   };
 
   const getZkp = async () => {
-    const { publicSignals, proof } = await generateProof(points[2], points[1], points[0], data);
+    const { publicSignals, proof } = await generateProof(
+      points[0],
+      points[1],
+      points[2],
+      data
+    );
     setPublicSignals(publicSignals);
     setProof(proof);
     console.log("Public Signals:", publicSignals);
     console.log("Proof:", proof);
   };
 
+  // need to write a script on hardhat to
+  // deploy verifier & erc20 first or
+  // deploy with zk wallet together within deploy func
   const deploy = async () => {
     const VERIFIER_ADDRESS = "";
     const bytecode = "";
@@ -63,8 +75,12 @@ export default function Home() {
     setContract(contract);
   };
 
+  // default setting: transfer ETH
   const tranferToken = async () => {
-    await contract.transferToken();
+    await contract.transferToken(tokenAddress, destination, amount, publicSignals, proof);
+    console.log("Token Address:", tokenAddress);
+    console.log("Destination:", destination);
+    console.log("Amount:", amount);
   };
 
   return (
@@ -81,7 +97,7 @@ export default function Home() {
           <input
             type="text"
             name="sharingKey"
-            value={sharingKey}
+            value={sharingKey && sharingKey}
             className={styles.input}
             disabled
           />
@@ -91,18 +107,19 @@ export default function Home() {
           <input
             type="text"
             name="hashItem"
-            value={hashItem}
+            value={hashItem && sharingKey}
             className={styles.input}
             disabled
           />
         </div>
-        {points.length != 0 &&
-          points.map((point, index) => <Point key={index} point={point} />)}
 
+        <Points points={points} />
         <div className={styles.container}>
           <button className={styles.button} onClick={deploy}>
             Create Zk Wallet
           </button>
+        </div>
+        <div className={styles.container}>
           <button className={styles.button} onClick={getZkp}>
             Get ZKP
           </button>
@@ -113,7 +130,6 @@ export default function Home() {
             value={tokenAddress}
             className={styles.input}
             onChange={(event) => setTokenAddress(event.target.value)}
-            disabled
           />
           <label htmlFor="destination">Destination: </label>
           <input
@@ -122,7 +138,6 @@ export default function Home() {
             value={destination}
             className={styles.input}
             onChange={(event) => setDestination(event.target.value)}
-            disabled
           />
           <label htmlFor="amount">Amount: </label>
           <input
@@ -131,7 +146,6 @@ export default function Home() {
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             className={styles.input}
-            disabled
           />
           <button className={styles.button} onClick={tranferToken}>
             Transfer Tokens
