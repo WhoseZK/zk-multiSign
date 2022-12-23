@@ -6,8 +6,8 @@ const Point = (props) => {
     return (
         <div className={styles.point}>
             <label>Point: </label>
-            <input className={styles.input} placeholder={point.x.toString()} disabled/>
-            <input className={styles.input} placeholder={point.y.toString()} disabled/>
+            <input className={styles.input} placeholder={point.x} disabled/>
+            <input className={styles.input} placeholder={point.y} disabled/>
         </div>
     )
 }

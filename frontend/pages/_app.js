@@ -10,10 +10,10 @@ function MyApp({ Component, pageProps }) {
       desiredChainId={activeChainId}
       chainRpc={{ [ChainId.Hardhat]: "http://localhost:8545" }}
       sdkOptions={{
-        readonlySettings: {
-          chainId: ChainId.Hardhat,
-          rpcUrl: "http://localhost:8545",
-        },
+       readonlySettings: {
+         chainId: ChainId.Hardhat,
+         rpcUrl: "http://localhost:8545",
+       },
       }}
     >
       <Component {...pageProps} />

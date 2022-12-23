@@ -18,9 +18,9 @@ const generatePoints = async function(n) {
     for(let i=0;i<n;i++) {
 
         const x = Fq.random();
-        const y = Fq.add(Fq.mul(Fq.mul(a2,x), x), Fq.add(Fq.mul(a1, x), sharingKey));
+        const y = Fq.add(Fq.mul(Fq.mul(a2,x), x), Fq.add(Fq.mul(a1, x), sharingKey)).toString();
         
-        points.push({x, y});
+        points.push({"x": x.toString(), y});
     }
     return {
         sharingKey: sharingKey.toString(),
@@ -31,12 +31,12 @@ const generatePoints = async function(n) {
 
 const generateProof = async function(point0, point1, point2, zkp) {
     const input = {
-        x0: point0.x,
-        y0: point0.y,
-        x1: point1.x,
-        y1: point1.y,
-        x2: point2.x,
-        y2: point2.y
+        x0: BigInt(point0.x),
+        y0: BigInt(point0.y),
+        x1: BigInt(point1.x),
+        y1: BigInt(point1.y),
+        x2: BigInt(point2.x),
+        y2: BigInt(point2.y)
     }
     const result = await groth16.fullProve(input, zkp.wasm, zkp.zkey);
 

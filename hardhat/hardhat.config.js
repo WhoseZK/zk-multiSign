@@ -13,9 +13,12 @@ module.exports = {
   },
 
   networks: {
-    goerli: {
-      url: `https://eth-goerli.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: [GOERLI_PRIVATE_KEY],
+    localhost: {
+      url: "http://127.0.0.1:8545"
     },
+    // goerli: {
+    //   url: `https://eth-goerli.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    //   accounts: [GOERLI_PRIVATE_KEY],
+    // }
   }
 };
