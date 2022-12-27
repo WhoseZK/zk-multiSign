@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 const PRIVATE_KEY =
-  "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 const provider = hre.ethers.providers.getDefaultProvider(
   "http://localhost:8545"
@@ -9,7 +9,7 @@ const provider = hre.ethers.providers.getDefaultProvider(
 
 const wallet = new hre.ethers.Wallet(PRIVATE_KEY, provider);
 
-const ZK_WALLET = "0x8464135c8f25da09e49bc8782676a84730c318bc";
+const ZK_WALLET = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
 
 const ABI = [
   "function transfer(address to, uint256 amount) external returns (bool)",
