@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { run, ethers } = require("hardhat");
 const { generatePoints, generateProof } = require("./Utils");
 const {Keypair} = require("maci-domainobjs");
+const {genPrivKey} = require("maci-crypto");
 const {eddsa, poseidon} = require("circomlib");
 
 // TODO finish the test case
@@ -26,19 +27,19 @@ describe("ZkWallet", function () {
       // owner is default signer
       // using destination account to test recieving tokens instead
       const [owner, destination] = await ethers.getSigners();
-      const keyPairB = new Keypair();
+      const prvB = genPrivKey().toString();
       const msgB = poseidon([points[1].x, points[1].y]);
-      const sigB = eddsa.signMiMC(keyPairB.privKey.rawPrivKey.toString(), msgB);
-      const keyPairC = new Keypair();
+      const sigB = eddsa.signMiMC(prvB, msgB);
+      const prvC = genPrivKey().toString();
       const msgC = poseidon([points[2].x, points[2].y]);
-      const sigC = eddsa.signMiMC(keyPairC.privKey.rawPrivKey.toString(), msgC);
+      const sigC = eddsa.signMiMC(prvC, msgC);
       const { public, proof } = await generateProof(
         points[0],
         points[1],
         points[2],
-        keyPairB.pubKey.asCircuitInputs(),
+        eddsa.prv2pub(prvB),
         sigB,
-        keyPairC.pubKey.asCircuitInputs(),
+        eddsa.prv2pub(prvC),
         sigC
       );
       
