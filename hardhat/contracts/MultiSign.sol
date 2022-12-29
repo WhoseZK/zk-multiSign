@@ -27,7 +27,7 @@ abstract contract MultiSign {
         iVerifier = _iVerifier;
     }
 
-    modifier onlyApprove(uint256[4] calldata publicSignals, uint256[8] calldata proof) {
+    modifier onlyApprove(uint256[11] calldata publicSignals, uint256[8] calldata proof) {
         if (publicSignals[0] != sharingKeys) revert InvalidPolynominal();
         // if already used this one, should be removed
         if (nullifers[sharingKeys]) revert DuplicateSharingKeys();

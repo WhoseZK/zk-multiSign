@@ -6,7 +6,7 @@ interface IZkWallet {
 
     function transferToken(
         address tokenAddress,
-        uint256[2] calldata publicSignals,
+        uint256[11] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 

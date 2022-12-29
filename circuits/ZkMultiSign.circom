@@ -111,4 +111,4 @@ template ZkMultiSign() {
     nullifier <== poseidon.out;
 }
 
-component main = ZkMultiSign();
+component main { public [ pointB, sigB, pointC, sigC ] } = ZkMultiSign();

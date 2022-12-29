@@ -11,18 +11,23 @@ contract ZkWallet is IZkWallet, MultiSign {
 
     error InvalidOwner();
 
-    // TODO add merkle tree root for member checking
-    constructor(IVerifier iVerifier) MultiSign(iVerifier) {}
+    address owner;
+
+    // TODO change to use merkle tree root for member checking
+    constructor(IVerifier iVerifier) MultiSign(iVerifier) {
+        // setup relayer as owner
+        owner = msg.sender;
+    }
 
     function updatePolynominal(uint256 sharingKeys, address destination, uint256 amount) external {
-        // TODO add member checking zkp to change the ploynominal
+        // TODO add member checking by merkle tree zkp
         if (msg.sender != owner) revert InvalidOwner();
         _updatePolynominal(sharingKeys, destination, amount);
     }
 
     function transferToken(
         address tokenAddress,
-        uint256[2] calldata publicSignals,
+        uint256[11] calldata publicSignals,
         uint256[8] calldata proof
     ) external onlyApprove(publicSignals, proof) {
         if (tokenAddress == address(0)) {
