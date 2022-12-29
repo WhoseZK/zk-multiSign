@@ -24,7 +24,7 @@ const generatePoints = async function(n) {
     }
     
     return {
-        nullifier: poseidon([a2, a1, sharingKey]).toString(),
+        sharingKeys: poseidon([a2, a1, sharingKey]).toString(),
         points: points
     }
 } 

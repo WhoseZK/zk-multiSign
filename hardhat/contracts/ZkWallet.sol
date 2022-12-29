@@ -9,9 +9,7 @@ import { MultiSign } from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
 
-    error InvalidOwner();
-
-    address owner;
+    address public owner;
 
     // TODO change to use merkle tree root for member checking
     constructor(IVerifier iVerifier) MultiSign(iVerifier) {
@@ -19,17 +17,23 @@ contract ZkWallet is IZkWallet, MultiSign {
         owner = msg.sender;
     }
 
-    function updatePolynominal(uint256 sharingKeys, address destination, uint256 amount) external {
+    function raiseTransaction(
+        uint256 sharingKeys, 
+        address destination, 
+        uint256 amount
+    ) external override {
         // TODO add member checking by merkle tree zkp
         if (msg.sender != owner) revert InvalidOwner();
         _updatePolynominal(sharingKeys, destination, amount);
+
+        emit TransactionDetail(sharingKeys, destination, amount);
     }
 
     function transferToken(
         address tokenAddress,
         uint256[11] calldata publicSignals,
         uint256[8] calldata proof
-    ) external onlyApprove(publicSignals, proof) {
+    ) external override onlyApprove(publicSignals, proof) {
         if (tokenAddress == address(0)) {
             // transfer eth
             (bool result, ) = destination.call{value: amount}("");

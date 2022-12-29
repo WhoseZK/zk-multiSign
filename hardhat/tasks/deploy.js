@@ -1,14 +1,13 @@
 const { task, types } = require("hardhat/config");
 
 task("deploy", "Deploy ZKWallet contract")
-    .addParam("sharingKey", "Sharing Key in group", undefined, types.string)
-    .addParam("hashItem", "Hash Item in group", undefined, types.string)
     .addOptionalParam("verifier", "Verifier contract address", undefined, types.string)
-    .setAction(async ({ sharingKey, hashItem, verifier }, { ethers, _ }) => {
+    .setAction(async ({ verifier }, { ethers, _ }) => {
+        var _verifier = null;
         if (!verifier) {
 
             const Verifier = await ethers.getContractFactory("Verifier");
-            const _verifier = await Verifier.deploy();
+            _verifier = await Verifier.deploy();
 
             await _verifier.deployed();
             verifier = _verifier.address;
@@ -18,7 +17,7 @@ task("deploy", "Deploy ZKWallet contract")
 
         // build zkWallet
         const ZkWallet = await ethers.getContractFactory("ZkWallet");
-        const zkWallet = await ZkWallet.deploy(sharingKey, hashItem, verifier);
+        const zkWallet = await ZkWallet.deploy(verifier);
 
         const MockERC20 = await ethers.getContractFactory("MockERC20");
         const erc20 = await MockERC20.deploy(zkWallet.address);
@@ -30,6 +29,7 @@ task("deploy", "Deploy ZKWallet contract")
         console.log(`deploy erc20 to testnet in ${erc20.address}`);
 
         return {
+            _verifier,
             zkWallet,
             erc20
         };

@@ -11,11 +11,11 @@ abstract contract MultiSign {
 
     event UpdatePolynominalAndDetail(uint256 sharingKeys, address _destination, uint256 _amount);
 
-    uint256 sharingKeys;
+    uint256 public sharingKeys;
 
     // action details
-    address destination;
-    uint256 amount;
+    address public destination;
+    uint256 public amount;
 
     mapping(uint256 => bool) nullifers;
 
