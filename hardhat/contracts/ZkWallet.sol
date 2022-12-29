@@ -9,12 +9,19 @@ import { MultiSign } from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
 
-    constructor(uint256 sharingKey, uint256 hashItem, IVerifier iVerifier) MultiSign(sharingKey, hashItem, iVerifier) {}
+    error InvalidOwner();
+
+    // TODO add merkle tree root for member checking
+    constructor(IVerifier iVerifier) MultiSign(iVerifier) {}
+
+    function updatePolynominal(uint256 sharingKeys, address destination, uint256 amount) external {
+        // TODO add member checking zkp to change the ploynominal
+        if (msg.sender != owner) revert InvalidOwner();
+        _updatePolynominal(sharingKeys, destination, amount);
+    }
 
     function transferToken(
         address tokenAddress,
-        address destination,
-        uint256 amount,
         uint256[2] calldata publicSignals,
         uint256[8] calldata proof
     ) external onlyApprove(publicSignals, proof) {
@@ -26,13 +33,6 @@ contract ZkWallet is IZkWallet, MultiSign {
             // transfer erc20
             IERC20(tokenAddress).transfer(destination, amount);
         }
-    }
-
-    function updatePolynominal(
-        uint256[2] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external onlyApprove(publicSignals, proof) {
-        _updatePolynominal(publicSignals[0], publicSignals[1]);
     }
 
     // Function to receive Ether. msg.data must be empty

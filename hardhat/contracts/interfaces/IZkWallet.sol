@@ -6,14 +6,11 @@ interface IZkWallet {
 
     function transferToken(
         address tokenAddress,
-        address destination,
-        uint256 amount,
         uint256[2] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 
     function updatePolynominal(
-        uint256[2] calldata publicSignals,
-        uint256[8] calldata proof
+        uint256 sharingKeys, address destination, uint256 amount
     ) external;
 }

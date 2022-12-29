@@ -6,31 +6,39 @@ import { IVerifier } from "./interfaces/IVerifier.sol";
 abstract contract MultiSign {
 
     error InvalidPolynominal();
+    error DuplicateSharingKeys();
     error InvalidProof();
 
-    event UpdatePolynominal(uint256 sharingKey, uint256 hashItem);
+    event UpdatePolynominalAndDetail(uint256 sharingKeys, address _destination, uint256 _amount);
 
-    uint256 sharingKey;
+    uint256 sharingKeys;
 
-    uint256 hashItem;
+    // action details
+    address destination;
+    uint256 amount;
+
+    mapping(uint256 => bool) nullifers;
+
     // verifier contract only deploy once
     // it can hardcode
     IVerifier private iVerifier;
 
-    constructor(uint256 _sharingKey, uint256 _hashItem, IVerifier _iVerifier) {
-        _updatePolynominal(_sharingKey, _hashItem);
+    constructor(IVerifier _iVerifier) {
         iVerifier = _iVerifier;
     }
 
-    modifier onlyApprove(uint256[2] calldata publicSignals, uint256[8] calldata proof) {
-        if (publicSignals[0] != sharingKey || 
-            publicSignals[1] != hashItem) revert InvalidPolynominal();
+    modifier onlyApprove(uint256[4] calldata publicSignals, uint256[8] calldata proof) {
+        if (publicSignals[0] != sharingKeys) revert InvalidPolynominal();
+        // if already used this one, should be removed
+        if (nullifers[sharingKeys]) revert DuplicateSharingKeys();
 
         if(!iVerifier.verifyProof([proof[0], proof[1]],
             [[proof[2], proof[3]], [proof[4], proof[5]]],
             [proof[6], proof[7]],
             publicSignals)) revert InvalidProof();
         _;
+
+        nullifers[sharingKeys] = true;
     }
 
     /**
@@ -38,9 +46,10 @@ abstract contract MultiSign {
      * access to update the sharing key
      *
      */
-    function _updatePolynominal(uint256 _sharingKey, uint256 _hashItem) internal virtual {
-        sharingKey = _sharingKey;
-        hashItem = _hashItem;
-        emit UpdatePolynominal(sharingKey, hashItem);
+    function _updatePolynominal(uint256 _sharingKeys, address _destination, uint256 _amount) internal virtual {
+        sharingKeys = _sharingKeys;
+        destination = _destination;
+        amount = _amount;
+        emit UpdatePolynominalAndDetail(sharingKeys, _destination, amount);
     }
 }
