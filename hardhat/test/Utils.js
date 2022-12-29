@@ -24,21 +24,22 @@ const generatePoints = async function(n) {
     }
     
     return {
-        sharingKey: sharingKey.toString(),
-        hashItem: poseidon([a2, a1]).toString(),
+        nullifier: poseidon([a2, a1, sharingKey]).toString(),
         points: points
     }
 } 
 
-const generateProof = async function(point0, point1, point2) {
+const generateProof = async function(point0, point1, point2, pubKeyB, sigB, pubKeyC, sigC) {
 
     const input = {
-        x0: point0.x,
-        y0: point0.y,
-        x1: point1.x,
-        y1: point1.y,
-        x2: point2.x,
-        y2: point2.y
+        enabled: 1,
+        pointA: [point0.x, point0.y],
+        pubKeyB: [pubKeyB[0], pubKeyB[1]],
+        pointB: [point1.x, point1.y],
+        sigB: [sigB.S, sigB.R8[0], sigB.R8[1]],
+        pubKeyC: [pubKeyC[0], pubKeyC[1]],
+        pointC: [point2.x, point2.y],
+        sigC: [sigC.S, sigC.R8[0], sigC.R8[1]]
     }
     const result = await groth16.fullProve(input, 
         "./statics/ZkMultiSign.wasm", "./statics/ZkMultiSign.zkey");
