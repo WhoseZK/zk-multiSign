@@ -10,7 +10,6 @@ interface IZkWallet {
     event UpdateRoot(uint256 _oldRoot, uint256 _newRoot);
 
     event NewTransaction(
-        uint256 index,
         PubKey pubKey,
         uint256 sharingKeys,
         address destination,
@@ -23,11 +22,9 @@ interface IZkWallet {
     }
 
     struct TransactionDetails {
-        uint256 sharingKeys;
         address destination;
         uint256 amount;
         uint64 expiredTime;
-        bool isTransferred;
     }
 
     function updateRoot(
@@ -36,7 +33,6 @@ interface IZkWallet {
     ) external;
 
     function transferToken(
-        uint256 index,
         address tokenAddress,
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
