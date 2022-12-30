@@ -12,6 +12,12 @@ interface IZkWallet {
         uint256 amount
     );
 
+    function updateRoot(
+        uint256 newRoot, 
+        uint256[1] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external;
+
     function transferToken(
         address tokenAddress,
         uint256[11] calldata publicSignals,

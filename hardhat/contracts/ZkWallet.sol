@@ -4,17 +4,35 @@ pragma solidity ^0.8.0;
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import { IZkWallet } from "./interfaces/IZkWallet.sol";
-import { IVerifier } from "./interfaces/IVerifier.sol";
+import { IZkMultiSignVerifier } from "./interfaces/IZkMultiSignVerifier.sol";
+import { IMemberVerfier } from "./interfaces/IMemberVerfier.sol";
 import { MultiSign } from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
 
-    address public owner;
+    uint256 public memberRoot;
+    IMemberVerfier private memberVerfier;
 
-    // TODO change to use merkle tree root for member checking
-    constructor(IVerifier iVerifier) MultiSign(iVerifier) {
-        // setup relayer as owner
-        owner = msg.sender;
+    constructor(
+        IZkMultiSignVerifier iZkMultiSignVerifier, 
+        IMemberVerfier _memberVerfier, 
+        uint256 _memberRoot
+    ) MultiSign(iZkMultiSignVerifier) {
+        memberVerfier = _memberVerfier;
+        memberRoot = _memberRoot;
+    }
+
+    function updateRoot(
+        uint256 newRoot, 
+        uint256[1] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external override {
+        // only member can update root
+        if(!iVerifier.verifyProof([proof[0], proof[1]],
+            [[proof[2], proof[3]], [proof[4], proof[5]]],
+            [proof[6], proof[7]],
+            publicSignals)) revert InvalidProof();
+        memberRoot = newRoot;
     }
 
     function raiseTransaction(

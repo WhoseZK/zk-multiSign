@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { IVerifier } from "./interfaces/IVerifier.sol";
+import { IVerifier } from "./interfaces/IZkMultiSignVerifier.sol";
 
 abstract contract MultiSign {
 
@@ -13,7 +13,7 @@ abstract contract MultiSign {
 
     uint256 public sharingKeys;
 
-    // action details
+    // action details (This could be changed based on using scenario)
     address public destination;
     uint256 public amount;
 
@@ -21,9 +21,9 @@ abstract contract MultiSign {
 
     // verifier contract only deploy once
     // it can hardcode
-    IVerifier private iVerifier;
+    IZkMultiSignVerifier private iVerifier;
 
-    constructor(IVerifier _iVerifier) {
+    constructor(IZkMultiSignVerifier _iVerifier) {
         iVerifier = _iVerifier;
     }
 
