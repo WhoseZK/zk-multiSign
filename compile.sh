@@ -2,7 +2,7 @@
 
 algo=$1
 version=$2
-name=ZkMultiSign
+name=$3
 
 cd circuits
 

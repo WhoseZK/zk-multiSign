@@ -161,7 +161,7 @@ library Pairing {
         return pairing(p1, p2);
     }
 }
-contract Verifier {
+contract MultiSignVerifier {
     using Pairing for *;
     struct VerifyingKey {
         Pairing.G1Point alfa1;
@@ -281,13 +281,14 @@ contract Verifier {
         )) return 1;
         return 0;
     }
+
     /// @return r  bool true if proof is valid
-    function verifyProof(
+    function _verifyProof(
             uint[2] memory a,
             uint[2][2] memory b,
             uint[2] memory c,
-            uint[11] memory input
-        ) public view returns (bool r) {
+            uint[] memory input
+        ) internal view returns (bool r) {
         Proof memory proof;
         proof.A = Pairing.G1Point(a[0], a[1]);
         proof.B = Pairing.G2Point([b[0][0], b[0][1]], [b[1][0], b[1][1]]);
@@ -301,5 +302,12 @@ contract Verifier {
         } else {
             return false;
         }
+    }
+
+    function verifyProof(uint256[] calldata publicSignals,
+        uint256[8] calldata proof) public view returns (bool r) {
+        return _verifyProof([proof[0], proof[1]],
+        [[proof[2], proof[3]], [proof[4], proof[5]]],
+        [proof[6], proof[7]], publicSignals);
     }
 }

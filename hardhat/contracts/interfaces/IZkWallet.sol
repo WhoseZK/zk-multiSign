@@ -4,27 +4,49 @@ pragma solidity ^0.8.0;
 interface IZkWallet {
     error FailedToSendEthers();
     error InvalidOwner();
+    error InvalidSMT();
+    error TransactionExpired();
 
-    // for recording the transaction detail
-    event TransactionDetail(
-        uint256 sharingKeys, 
-        address destination, 
+    event UpdateRoot(uint256 _oldRoot, uint256 _newRoot);
+
+    event NewTransaction(
+        uint256 index,
+        PubKey pubKey,
+        uint256 sharingKeys,
+        address destination,
         uint256 amount
     );
 
+    struct PubKey {
+        uint256 x;
+        uint256 y;
+    }
+
+    struct TransactionDetails {
+        uint256 sharingKeys;
+        address destination;
+        uint256 amount;
+        uint64 expiredTime;
+        bool isTransferred;
+    }
+
     function updateRoot(
-        uint256 newRoot, 
-        uint256[1] calldata publicSignals,
+        uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 
     function transferToken(
+        uint256 index,
         address tokenAddress,
-        uint256[11] calldata publicSignals,
+        uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 
     function raiseTransaction(
-        uint256 sharingKeys, address destination, uint256 amount
+        uint256 sharingKeys,
+        address destination,
+        uint256 amount,
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) external;
 }

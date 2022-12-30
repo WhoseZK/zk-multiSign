@@ -1,27 +1,49 @@
 const { expect } = require("chai");
 const { run, ethers } = require("hardhat");
-const { generatePoints, generateProof } = require("./Utils");
-const {Keypair} = require("maci-domainobjs");
-const {genPrivKey} = require("maci-crypto");
-const {eddsa, poseidon} = require("circomlib");
+const {
+  generatePoints,
+  generateMultiSignProof,
+  generateUpdateMemberProof,
+  generateInclusionOfMemberProof
+} = require("./Utils");
+const Scalar = require("ffjavascript").Scalar;
+const { genPrivKey } = require("maci-crypto");
+const { eddsa, poseidon, smt } = require("circomlib");
 
 // TODO finish the test case
 describe("ZkWallet", function () {
-  
   let owner;
-  
+
   let zkWallet;
   let erc20;
-  let sssResult; 
+  let sssResult;
   let destination;
 
-  let proof;
-  let public;
+  let tree;
+
+  let prvA;
+  let prvB;
+  let prvC;
+
+  let mockProof;
+  let mockPublic;
 
   const TRANSFER_AMOUNT = 100000;
 
   before(async () => {
-    const contracts = await run("deploy");
+    // create private keys
+    prvA = genPrivKey().toString();
+    prvB = genPrivKey().toString();
+    prvC = genPrivKey().toString();
+
+    // create Sparse Merkle Tree(SMT)
+    tree = await smt.newMemEmptyTrie();
+    await tree.insert(0, poseidon(eddsa.prv2pub(prvA)));
+    await tree.insert(1, poseidon(eddsa.prv2pub(prvB)));
+    await tree.insert(2, poseidon(eddsa.prv2pub(prvC)));
+
+    // deploy contracts
+    const contracts = await run("deploy", { merkleRoot: tree.root });
     zkWallet = contracts.zkWallet;
     erc20 = contracts.erc20;
 
@@ -29,43 +51,79 @@ describe("ZkWallet", function () {
   });
 
   describe("ZkWallet", () => {
+    it("Update pubKey", async () => {
+      const newPrv = genPrivKey().toString();
+      const newPub = eddsa.prv2pub(newPrv);
+      const msg = poseidon(newPub);
+      const sig = eddsa.signMiMC(prvA, msg);
+
+      const res = await tree.update(0, msg);
+
+      const { public, proof } = await generateUpdateMemberProof(
+        res.oldRoot,
+        res.siblings,
+        res.oldKey,
+        eddsa.prv2pub(prvA),
+        newPub,
+        sig
+      );
+
+      const tx = await zkWallet.updateRoot(public, proof);
+
+      await expect(tx).to.emit(zkWallet, "UpdateRoot")
+        .withArgs(res.oldRoot, res.newRoot);
+    });
 
     it("Raise the transcation from owner", async () => {
-        
-        // create the point and sharingkeys
-        sssResult = await generatePoints(5);
-        const sharingKeys = sssResult.sharingKeys;
+      // create the point and sharingkeys
+      sssResult = await generatePoints(5);
+      const sharingKeys = sssResult.sharingKeys;
+      const pubKey = eddsa.prv2pub(prvB);
+      const msg = poseidon(pubKey);
+      const sig = eddsa.signMiMC(prvB, msg);
+      const key = Scalar.e(1);
+      const res = await tree.find(key);
+      const { public, proof } = await generateInclusionOfMemberProof(
+        pubKey,
+        sig,
+        tree.root,
+        key,
+        res.siblings
+      );
+      // fixed the transaction detail
+      const signers = await ethers.getSigners();
+      destination = signers[1].address;
+      const txnAmt = TRANSFER_AMOUNT;
 
-        // fixed the transaction detail
-        const signers = await ethers.getSigners()
-        destination = signers[1].address
-        const txnAmt = TRANSFER_AMOUNT
-        
-        // raise the transaction for multiSign
-        const result = await zkWallet.raiseTransaction(sharingKeys, destination, txnAmt)
-        
-        await expect(result).to.emit(zkWallet, "TransactionDetail").withArgs(sharingKeys, destination, txnAmt);
-    })
+      // raise the transaction for multiSign
+      const tx = await zkWallet.raiseTransaction(
+        sharingKeys,
+        destination,
+        txnAmt,
+        public,
+        proof
+      );
+
+      await expect(tx).to.emit(zkWallet, "NewTransaction")
+        .withArgs(0, ([pubKey[0], pubKey[1]]), sharingKeys, destination, txnAmt);
+    });
 
     it("Participant provide their key(point) to generate proof", async () => {
-
-      // assume the points have already been provided to every participant 
+      // assume the points have already been provided to every participant
       const points = sssResult.points;
 
       // participant B is using point[1] to generate signature
-      const prvB = genPrivKey().toString();
       const msgB = poseidon([points[1].x, points[1].y]);
       const sigB = eddsa.signMiMC(prvB, msgB);
 
       // participant C is using point[2] to generate signature
-      const prvC = genPrivKey().toString();
       const msgC = poseidon([points[2].x, points[2].y]);
       const sigC = eddsa.signMiMC(prvC, msgC);
 
       // B and C provide their points and signature to A, A generate proof
-      const result = await generateProof(
+      const { public, proof } = await generateMultiSignProof(
         points[0],
-        points[1], 
+        points[1],
         points[2],
         eddsa.prv2pub(prvB),
         sigB,
@@ -73,13 +131,13 @@ describe("ZkWallet", function () {
         sigC
       );
 
-      proof = result.proof;
-      public = result.public;
+      mockProof = proof;
+      mockPublic = public;
+      
       expect(public[0]).to.equal(sssResult.sharingKeys);
     });
 
     it("Execute transaction by txn holder", async () => {
-
       // choose one for testing
 
       // transfer eth (local will show error)
@@ -90,21 +148,15 @@ describe("ZkWallet", function () {
       // )).to.changeEtherBalances([owner, destination], [-TRANSFER_AMOUNT, TRANSFER_AMOUNT]);
 
       // transfer erc20
-      await expect(() => zkWallet.transferToken(
-        erc20.address,
-        public,
-        proof
-      )).to.changeTokenBalance(erc20, destination, TRANSFER_AMOUNT);
+      await expect(() =>
+        zkWallet.transferToken(0, erc20.address, mockPublic, mockProof)
+      ).to.changeTokenBalance(erc20, destination, TRANSFER_AMOUNT);
     });
 
-    it("Execute the same txn again", async() => {
-      
+    it("Execute the same txn again", async () => {
       // since repeat transaction
-      await expect(zkWallet.transferToken(
-        erc20.address,
-        public,
-        proof
-      )).to.be.reverted;
-    })
+      await expect(zkWallet.transferToken(0, erc20.address, mockPublic, mockProof)).to.be
+        .reverted;
+    });
   });
 });
