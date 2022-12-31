@@ -8,9 +8,7 @@ abstract contract MultiSign {
     error DuplicateSharingKeys();
     error InvalidProof();
 
-    uint256 public sharingKeys;
-
-    mapping(uint256 => bool) nullifers;
+    mapping(uint256 => bool) private nullifiers;
 
     IVerifier public immutable iVerifier;
 
@@ -22,18 +20,16 @@ abstract contract MultiSign {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) {
-        if (publicSignals[0] != sharingKeys) revert InvalidPolynominal();
         // if already used this one, should be removed
-        if (nullifers[sharingKeys]) revert DuplicateSharingKeys();
+        if (nullifiers[publicSignals[0]]) revert DuplicateSharingKeys();
 
         if (!iVerifier.verifyProof(publicSignals, proof)) revert InvalidProof();
         _;
 
-        nullifers[sharingKeys] = true;
+        nullifiers[publicSignals[0]] = true;
     }
 
-    function _updatePolynominal(uint256 _sharingKeys) internal virtual {
-        if (nullifers[_sharingKeys]) revert DuplicateSharingKeys();
-        sharingKeys = _sharingKeys;
+    function _checkPolynominal(uint256 _sharingKeys) internal virtual returns (bool) {
+        return nullifiers[_sharingKeys];
     }
 }

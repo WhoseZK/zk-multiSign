@@ -6,7 +6,6 @@ const {
   generateUpdateMemberProof,
   generateInclusionOfMemberProof
 } = require("./Utils");
-const Scalar = require("ffjavascript").Scalar;
 const { genPrivKey } = require("maci-crypto");
 const { eddsa, poseidon, smt } = require("circomlib");
 

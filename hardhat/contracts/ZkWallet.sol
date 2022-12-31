@@ -8,13 +8,10 @@ import {IVerifier} from "./interfaces/IVerifier.sol";
 import {MultiSign} from "./MultiSign.sol";
 
 contract ZkWallet is IZkWallet, MultiSign {
-    uint256 public memberRoot;
     IVerifier public immutable memberVerifier;
     IVerifier public immutable inclusionVerifier;
 
-    // action details (This could be changed based on using scenario)
-    address public destination;
-    uint256 public amount;
+    uint256 public memberRoot;
     // for limiting the transaction multiSign duration
     uint64 public duration; 
 
@@ -52,23 +49,20 @@ contract ZkWallet is IZkWallet, MultiSign {
         // only member can raise transaction
         if (!inclusionVerifier.verifyProof(publicSignals, proof)) revert InvalidProof();
         if (publicSignals[2] != memberRoot) revert InvalidSMT();
+        if (_checkPolynominal(_sharingKeys)) revert DuplicateSharingKeys();
 
-        TransactionDetails memory transaction = TransactionDetails({
+        transactions[_sharingKeys] = TransactionDetails({
             destination: _destination,
             amount: _amount,
             expiredTime: uint64(duration + block.timestamp)
         });
-
-        transactions[publicSignals[0]] = transaction;
-
-        _updatePolynominal(_sharingKeys, _destination, _amount);
 
         PubKey memory pubKey = PubKey({
             x: publicSignals[0],
             y: publicSignals[1]
         });
 
-        emit NewTransaction(pubKey, sharingKeys, destination, amount);
+        emit NewTransaction(pubKey, _sharingKeys, _destination, _amount);
     }
 
     function transferToken(
@@ -76,38 +70,30 @@ contract ZkWallet is IZkWallet, MultiSign {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external override onlyApprove(publicSignals, proof) {
-        TransactionDetails storage transaction = transactions[publicSignals[0]];
-        if (transaction.expiredTime < block.timestamp) {
-            nullifers[publicSignals[0]] = true;
-            revert TransactionExpired();
+        TransactionDetails memory transaction = transactions[publicSignals[0]];
+        // call this func will nullify the sharingKey
+        // memeber can check if transction is sent successfully
+        // by logging the send transaction event
+        if (transaction.expiredTime > block.timestamp) {
+            if (tokenAddress == address(0)) {
+                // transfer eth
+                (bool result, ) = transaction.destination.call{value: transaction.amount}("");
+                if (!result) revert FailedToSendEthers();
+            } else {
+                // transfer erc20
+                IERC20(tokenAddress).transfer(transaction.destination, transaction.amount);
+            }
+
+            emit SendTransaction(publicSignals[0], true);
         }
 
-        if (tokenAddress == address(0)) {
-            // transfer eth
-            (bool result, ) = destination.call{value: transaction.amount}("");
-            if (!result) revert FailedToSendEthers();
-        } else {
-            // transfer erc20
-            IERC20(tokenAddress).transfer(destination, transaction.amount);
-        }
-
-        nullifers[publicSignals[0]] = true;
+        emit SendTransaction(publicSignals[0], false);
     }
     
     function _updateRoot(uint256 oldRoot, uint256 newRoot) internal {
         if (newRoot == 0) revert InvalidSMT();
         memberRoot = newRoot;
         emit UpdateRoot(oldRoot, memberRoot);
-    }
-
-    function _updatePolynominal(
-        uint256 _sharingKeys,
-        address _destination,
-        uint256 _amount
-    ) internal virtual {
-        super._updatePolynominal(_sharingKeys);
-        destination = _destination;
-        amount = _amount;
     }
 
     // Function to receive Ether. msg.data must be empty
