@@ -1,15 +1,8 @@
 import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
-import { Contract, ethers } from "ethers";
-import { genPrivKey } from "maci-crypto";
-import { eddsa, poseidon, smt } from "circomlib";
+import { ethers } from "ethers";
 import useSWR from "swr";
-import User from "../src/data/User";
-import { generateInclusionOfMemberProof } from "../src/services/ZkpService";
-import { generatePoints } from "../src/services/SSSService";
-import { createUser } from "../src/services/UserService"
-import Points from "../src/components/Points";
 import UserComponents from "../src/components/UserComponents";
 import UserInputComponent from "../src/components/UserInputComponent";
 import Relayer from "../src/components/Relayer";
@@ -117,33 +110,11 @@ export default function Home() {
     })
   }, [tree])
 
-  const raiseTransaction = async (user, destination, amount) => {
-    
-    // hardcode the memberNumber
-    // TODO check add into local storage if required
-    const result = generatePoints(5)
-    result.points.forEach(point => {
-      // TODO send the point and sharingKeys to every user
-    })
-
-    const signature = eddsa.signMiMC(user.keyPair[1], user.keyPair[0][0])
-    const {publicSig, proof} = await generateInclusionOfMemberProof(user, signature, data)
-
-    try {
-      const txn = await contract.raiseTransaction(sharingKeys, destination, amount, publicSig, proof)
-      await txn.wait();
-      setSharingKeys(result.sharingKeys);
-      setPoints(result.points);
-    } catch (error) {
-      console.log(`Raise Error in raiseTransaction ${error}`)
-    }
-  };
-
   const handleCreateUser = (user) => {
      if(user.old) return
      setUsers((prevState) => {
       return [user, ...prevState];
-     })
+    })
   }
 
   const doAfterDeploy = (tree, zkWalletAmt, balance) => {
@@ -159,14 +130,15 @@ export default function Home() {
           <ConnectWallet />
         </div>
 
-        <div className="container">
-            <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
-        </div>
-        <div className="container">
-            <UserComponents userList={users}/>
-        </div>
-        <UserComponents
-          onCreateUser = {(user) => handleCreateUser(user)} /> 
+        <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
+        {data &&
+          <UserComponents
+            userList={users}
+            inclusionOfMember={data.inclusionofmember}
+            onPointsChanged={setPoints}
+            contract={contract}
+          />
+        }
 
         <Relayer provider = {provider} 
           userList = {users}
