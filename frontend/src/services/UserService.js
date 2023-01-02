@@ -4,16 +4,21 @@ import { User } from "../data/User";
 
 const genKeyPair = () => {
   const prvKey = genPrivKey().toString();
-  return [eddsa.prv2pub(prvKey), prvKey]
+  const pubKey = eddsa.prv2pub(prvKey).map(each => each.toString());
+  return [pubKey, prvKey]
 }
 
-const createUser = (userName) => {
+const createUser = (username) => {
 
-  if (localStorage.getItem(userName)) {
-    return JSON.parse(localStorage.getItem(userName))
+  if (localStorage.getItem(username)) {
+    const user = JSON.parse(localStorage.getItem(username));
+    user.old = true;
+    return user;
   }
 
-  return new User(genKeyPair())
+  const user = new User(genKeyPair());
+  localStorage.setItem(username, JSON.stringify(user))
+  return user
 }
 
 export { createUser }

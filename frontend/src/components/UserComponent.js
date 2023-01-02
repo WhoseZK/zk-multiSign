@@ -14,11 +14,10 @@ const UserComponent = (props) => {
             return;
         }
         const user = createUser(username);
-        setKeyPair([
-            [user.keyPair[0][0].toString(), user.keyPair[0][1].toString()],
-            user.keyPair[1]
-        ]);
-        onCreateUser(user);
+        setKeyPair(user.keyPair);
+        if (!user.old) {
+            onCreateUser(user);
+        } 
     }
 
     return (
@@ -27,7 +26,6 @@ const UserComponent = (props) => {
             <input
                 type="text"
                 name="username"
-                value={username}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 onChange={(event) => setUsername(event.target.value)}
             />

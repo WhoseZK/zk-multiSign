@@ -1,7 +1,7 @@
 
 class User {
     constructor(keyPair) {
-        this.keyPair = keyPair;
+        this.keyPair = keyPair
     }
 
     updateTreeDetail(treeResult) {

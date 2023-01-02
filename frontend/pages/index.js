@@ -20,7 +20,7 @@ export default function Home() {
   const [provider, setProvider] = useState();
   const address = useAddress();
   const [contract, setContract] = useState();
-  const [users, setUsers] = useState();
+  const [users, setUsers] = useState([]);
 
   // constructor args
   const [tree, setTree] = useState();
@@ -112,8 +112,7 @@ export default function Home() {
 
   // update tree detail
   useEffect(() => {
-    if(!users) return
-    users.forEach(user => {
+    users && users.forEach(user => {
       user.updateTreeDetail(tree)
     })
   }, [tree])
@@ -141,8 +140,7 @@ export default function Home() {
   };
 
   const handleCreateUser = (user) => {
-     setUsers((prevState) => {return {...prevState, user}})
-     console.log("users", users)
+     setUsers((prevState) => {return [...prevState, user]})
   }
 
   const doAfterDeploy = (tree, zkWalletAmt, balance) => {
@@ -163,7 +161,7 @@ export default function Home() {
           onCreateUser = {(user) => handleCreateUser(user)} /> 
 
         <Relayer provider = {provider} 
-          numbers = {5} 
+          numbers = {5} users = {users}
           doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
 
       </main>  

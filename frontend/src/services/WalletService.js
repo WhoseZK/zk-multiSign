@@ -7,6 +7,10 @@ const ABI = [
     "function transferToken(address tokenAddress, uint256[] calldata publicSignals, uint256[8] calldata proof) external"
 ];
 
+const VERIFIER_ABI = [
+    "function verifyProof(uint256[] calldata publicSignals, uint256[8] calldata proof) external view"
+]
+
 const ERC20_ABI = [
     "constructor(address zkWallet)",
     "function balanceOf(address account) public view returns (uint256)",
@@ -14,25 +18,25 @@ const ERC20_ABI = [
 ];
 
 const deployZkWallet = async (provider, memberRoot) => {
+    const signer =  provider.getSigner()
     if (localStorage.getItem("zkWallet")) {
         return new ethers.Contract(
             localStorage.getItem("zkWallet"),
             ABI,
-            provider.getSigner()
+            signer
         )
     }
 
-    const INCLUSION_VERIFIER = process.env.inclusionOfMemberVerifier;
-    const UPDATE_VERIFIER = process.env.updateMemberTreeVerifier;
-    const MULTI_SIGN_VERIFIER = process.env.zkMultiSignVerifier;
+    const zkMultiSignVerfier = new ethers.Contract(process.env.zkMultiSignVerifier, VERIFIER_ABI, signer)
+    const updateVerfier = new ethers.Contract(process.env.updateMemberTreeVerifier, VERIFIER_ABI, signer)
+    const inclusionVerifer = new ethers.Contract(process.env.inclusionOfMemberVerifier, VERIFIER_ABI, signer)
     const bytecode = process.env.multiSignByteCode;
 
-    const signer = provider.getSigner();
     const factory = new ethers.ContractFactory(ABI, bytecode, signer);
     const contract = await factory.deploy(
-        MULTI_SIGN_VERIFIER,
-        UPDATE_VERIFIER,
-        INCLUSION_VERIFIER,
+        zkMultiSignVerfier,
+        updateVerfier,
+        inclusionVerifer,
         600, // default 10 min
         memberRoot
     );

@@ -1,30 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { deployZkWallet, deployErc20, initZkWallet, updateBalance } from "../services/WalletService"
-import { eddsa, poseidon, smt } from "circomlib";
+import { smt } from "circomlib";
 
 const Relayer = (props) => {
 
     const doAfterDepoly = props.doAfterDepoly;
+    const users = props.users;
     const provider = props.provider;
     const numbers = props.numbers;
-    const [pubKeys, setPubKeys] = useState([])
+    const [inputs, setInputs] = useState();
+
+    useEffect(() => {
+        generateInputs(numbers)
+    }, [users])
 
     const generateInputs = (numbers) => {
         const inputs = []
         for (let i = 0; i < numbers; i++) {
             let inputName = `publicKey${i}`
+            let userPubKey = users[i]?.keyPair[0][0].toString()
             inputs.push(<input
                 type="text"
                 name={inputName}
+                value={userPubKey}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                onChange={(event) => setPubKeys((prevState) => {
-                    const value = event.target.value
-                    console.log(value)
-                    return { ...prevState, value }
-                })}
+                disabled
             />)
         }
-        return inputs
+        setInputs(inputs);
     }
 
     const generateRootAndDeployContract = async () => {
@@ -32,6 +35,7 @@ const Relayer = (props) => {
         // gather all public keys and build the tree
         const tree = await smt.newMemEmptyTrie();
         var index = 0;
+        const pubKeys = users.map(user => user.keyPair[0][0])
         for (let i = 0; i < pubKeys.length; i++) {
             await tree.insert(index++, pubKeys[i]);
         }
@@ -50,7 +54,7 @@ const Relayer = (props) => {
     return (
         <div className="container">
             <h1>Relayer</h1>
-            {generateInputs(numbers)}
+            { inputs }
             <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={generateRootAndDeployContract}>
                 Generate Points & Deploy Contract
             </button>
