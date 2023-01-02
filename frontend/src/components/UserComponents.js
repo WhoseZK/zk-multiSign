@@ -1,7 +1,6 @@
 import UserComponent from "./UserComponent";
 
 const UserComponents = (props) => {
-  console.log("userList", props.userList);
   return (
     <>
     {props.userList?.map((user, index) => 

@@ -140,6 +140,7 @@ export default function Home() {
   };
 
   const handleCreateUser = (user) => {
+     if(user.old) return
      setUsers((prevState) => {
       return [user, ...prevState];
      })
@@ -165,11 +166,10 @@ export default function Home() {
             <UserComponents userList={users}/>
         </div>
         <UserComponents
-          numbers = {5}
           onCreateUser = {(user) => handleCreateUser(user)} /> 
 
         <Relayer provider = {provider} 
-          numbers = {5} users = {users}
+          userList = {users}
           doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
 
       </main>  
