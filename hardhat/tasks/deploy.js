@@ -8,7 +8,7 @@ task("deploy", "Deploy ZKWallet contract")
     .addOptionalParam("inclusionOfMemberVerifier", "inclusionOfMemberVerifier contract address", undefined, types.string)
     .setAction(async ({ merkleRoot, duration, multiSignVerifier, updateMemberVerifier, inclusionOfMemberVerifier }, { ethers, _ }) => {
         if (!multiSignVerifier) {
-            const MultiSignVerifier = await ethers.getContractFactory("MultiSignVerifier");
+            const MultiSignVerifier = await ethers.getContractFactory("ZkMultiSignVerifier");
             const _multiSignVerifier = await MultiSignVerifier.deploy();
             await _multiSignVerifier.deployed();
             multiSignVerifier = _multiSignVerifier.address;
@@ -16,7 +16,7 @@ task("deploy", "Deploy ZKWallet contract")
         }
         
         if (!updateMemberVerifier) {
-            const UpdateMemberVerifier = await ethers.getContractFactory("UpdateMemberVerifier");
+            const UpdateMemberVerifier = await ethers.getContractFactory("UpdateMemberTreeVerifier");
             const _updateMemberVerifier = await UpdateMemberVerifier.deploy();
             await _updateMemberVerifier.deployed();
             updateMemberVerifier = _updateMemberVerifier.address;

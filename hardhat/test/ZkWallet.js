@@ -36,9 +36,9 @@ describe("ZkWallet", function () {
 
     // create Sparse Merkle Tree(SMT)
     tree = await smt.newMemEmptyTrie();
-    await tree.insert(0, poseidon(eddsa.prv2pub(prvA)));
-    await tree.insert(1, poseidon(eddsa.prv2pub(prvB)));
-    await tree.insert(2, poseidon(eddsa.prv2pub(prvC)));
+    await tree.insert(0, eddsa.prv2pub(prvA)[0]);
+    await tree.insert(1, eddsa.prv2pub(prvB)[0]);
+    await tree.insert(2, eddsa.prv2pub(prvC)[0]);
 
     // deploy contracts
     const contracts = await run("deploy", { merkleRoot: tree.root.toString() });
@@ -54,11 +54,10 @@ describe("ZkWallet", function () {
       // new A key
       const newPrv = genPrivKey().toString();
       const newPub = eddsa.prv2pub(newPrv);
-      const msg = poseidon(newPub)
-      const sig = eddsa.signMiMC(prvA, msg);
+      const sig = eddsa.signMiMC(prvA, newPub[0]);
 
       // A index is 0
-      const res = await tree.update(0, msg);
+      const res = await tree.update(0, newPub[0]);
 
       const { public, proof } = await generateUpdateMemberProof(
         res.oldRoot,
@@ -120,20 +119,27 @@ describe("ZkWallet", function () {
       // participant B is using point[1] to generate signature
       const msgB = poseidon([points[1].x, points[1].y]);
       const sigB = eddsa.signMiMC(prvB, msgB);
+      const resB = await tree.find(1);
 
       // participant C is using point[2] to generate signature
       const msgC = poseidon([points[2].x, points[2].y]);
       const sigC = eddsa.signMiMC(prvC, msgC);
+      const resC = await tree.find(2);
 
       // B and C provide their points and signature to A, A generate proof
       const { public, proof } = await generateMultiSignProof(
+        tree.root,
         points[0],
         points[1],
         points[2],
         eddsa.prv2pub(prvB),
         sigB,
+        1,
+        resB.siblings,
         eddsa.prv2pub(prvC),
-        sigC
+        sigC,
+        2,
+        resC.siblings
       );
 
       mockProof = proof;
