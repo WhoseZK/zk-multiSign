@@ -4,15 +4,15 @@ const UserComponents = (props) => {
   console.log("userList", props.userList);
   return (
     <>
-    {props.userList.map((user, index) => 
-     <UserComponent
-        key={index}
-        name={user.userName}
-        x={user.keyPair[0][0].toString()}
-        y={user.keyPair[0][1].toString()}
-        prvKey={user.keyPair[1]}
-      />
-    )}
+      {props.userList.map((user, index) => (
+        <UserComponent
+          key={index}
+          user={user}
+          inclusionOfMember={props.inclusionOfMember}
+          onPointsChanged={props.onPointsChanged}
+          contract={props.contract}
+        />
+      ))}
     </>
   );
 };
