@@ -47,6 +47,7 @@ const generateInclusionOfMemberProof = async (
 
   const input = {
     pubKey: pubKey,
+    point: pubKey,
     sig: [sig.S, sig.R8[0], sig.R8[1]],
     root: root,
     key: key,
@@ -84,7 +85,7 @@ const generateUpdateMemberProof = async (
     siblings: siblings,
     keyOfTree: keyOfTree,
     oldPubKey: oldPubKey,
-    newValue: poseidon(newPubKey),
+    newValue: newPubKey[0],
     sig: [sig.S, sig.R8[0], sig.R8[1]],
   };
 
@@ -100,24 +101,39 @@ const generateUpdateMemberProof = async (
   };
 };
 
+const fulfillSiblings = (siblings) => {
+  const length = 10 - siblings.length;
+  for (let i = 0; i < length; i++) {
+    siblings.push(BigInt(0));
+  }
+  return siblings;
+}
+
 const generateMultiSignProof = async (
+  root,
   point0,
   point1,
   point2,
   pubKeyB,
   sigB,
+  keyB,
+  siblingsB,
   pubKeyC,
-  sigC
+  sigC,
+  keyC,
+  siblingsC
 ) => {
+  // depth of smt : 10
+  const sibB = fulfillSiblings(siblingsB);
+  const sibC = fulfillSiblings(siblingsC);
   const input = {
-    enabled: 1,
+    root: root,
     pointA: [point0.x, point0.y],
-    pubKeyB: pubKeyB,
-    pointB: [point1.x, point1.y],
-    sigB: [sigB.S, sigB.R8[0], sigB.R8[1]],
-    pubKeyC: pubKeyC,
-    pointC: [point2.x, point2.y],
-    sigC: [sigC.S, sigC.R8[0], sigC.R8[1]],
+    pubKey: [pubKeyB, pubKeyC],
+    point: [[point1.x, point1.y], [point2.x, point2.y]],
+    sig: [[sigB.S, sigB.R8[0], sigB.R8[1]], [sigC.S, sigC.R8[0], sigC.R8[1]]],
+    key: [keyB, keyC],
+    siblings: [sibB, sibC]
   };
 
   const result = await groth16.fullProve(

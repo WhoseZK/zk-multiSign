@@ -46,8 +46,8 @@ template InclusionOfMember() {
     verifySMT.oldValue <== pubKey[0];
     verifySMT.isOld0 <== 0;
     verifySMT.key <== key;
-    verifySMT.value <== value;
+    verifySMT.value <== pubKey[0];
     verifySMT.fnc <== 0;
 }
 
-// component main { public [ root, pubKey ] } = InclusionOfMember();
+component main { public [ root, pubKey ] } = InclusionOfMember();
