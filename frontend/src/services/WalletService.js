@@ -8,7 +8,7 @@ const ABI = [
 ];
 
 const VERIFIER_ABI = [
-    "function verifyProof(uint256[] calldata publicSignals, uint256[8] calldata proof) external view"
+    "function verifyProof(uint256[] calldata publicSignals, uint256[8] calldata proof) external view returns (bool r)"
 ]
 
 const ERC20_ABI = [

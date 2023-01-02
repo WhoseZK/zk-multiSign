@@ -4,7 +4,7 @@ const UserComponents = (props) => {
   console.log("userList", props.userList);
   return (
     <>
-    {props.userList.map((user, index) => 
+    {props.userList?.map((user, index) => 
      <UserComponent
         key={index}
         name={user.userName}

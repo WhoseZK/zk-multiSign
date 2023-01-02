@@ -67,8 +67,7 @@ export default function Home() {
           provider.getSigner()
         );
         setContract(contract);
-        setSharingKey(localStorage.getItem("sharingKey"));
-        setHashItem(localStorage.getItem("hashItem"));
+        setSharingKeys(localStorage.getItem("sharingKeys"));
         setPoints(JSON.parse(localStorage.getItem("points")));
       }
       if (localStorage.getItem("mockErc20")) {
@@ -143,9 +142,7 @@ export default function Home() {
   const handleCreateUser = (user) => {
      setUsers((prevState) => {
       return [user, ...prevState];
-    })
-     console.log(users)
-     setUsers((prevState) => {return [...prevState, user]})
+     })
   }
 
   const doAfterDeploy = (tree, zkWalletAmt, balance) => {

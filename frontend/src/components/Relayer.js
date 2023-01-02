@@ -5,7 +5,7 @@ import { smt } from "circomlib";
 const Relayer = (props) => {
 
     const doAfterDepoly = props.doAfterDepoly;
-    const users = props.users;
+    const users = props.users? props.users:[];
     const provider = props.provider;
     const numbers = props.numbers;
     const [inputs, setInputs] = useState();
