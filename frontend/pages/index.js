@@ -60,8 +60,7 @@ export default function Home() {
           provider.getSigner()
         );
         setContract(contract);
-        setSharingKey(localStorage.getItem("sharingKey"));
-        setHashItem(localStorage.getItem("hashItem"));
+        setSharingKeys(localStorage.getItem("sharingKeys"));
         setPoints(JSON.parse(localStorage.getItem("points")));
       }
       if (localStorage.getItem("mockErc20")) {
@@ -112,6 +111,7 @@ export default function Home() {
   }, [tree])
 
   const handleCreateUser = (user) => {
+     if(user.old) return
      setUsers((prevState) => {
       return [user, ...prevState];
     })
@@ -141,7 +141,7 @@ export default function Home() {
         }
 
         <Relayer provider = {provider} 
-          numbers = {5} users = {users}
+          userList = {users}
           doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
 
       </main>  

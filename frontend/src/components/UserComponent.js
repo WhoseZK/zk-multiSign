@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 const UserComponent = (props) => {
-  [destination, setDestination] = useState("");
-  [tokenAddress, setTokenAddress] = useState("");
-  [amount, setAmount] = useState(0);
+  const [destination, setDestination] = useState("");
+  const [tokenAddress, setTokenAddress] = useState("");
+  const [amount, setAmount] = useState(0);
 
   const name = props.user.userName;
   const x = props.user.keyPair[0][0];
@@ -49,14 +49,17 @@ const UserComponent = (props) => {
       <p>{y}</p>
       <label htmlFor="privatekey">Private Key: </label>
       <p>{prvKey}</p>
+      <label htmlFor="destination">Destination: </label>
       <input
         value={destination}
         onChange={(event) => setDestination(event.target.value)}
       />
+      <label htmlFor="tokenAddress">Token Address: </label>
       <input
         value={tokenAddress}
         onChange={(event) => setTokenAddress(event.target.value)}
       />
+      <label htmlFor="amount">Amount: </label>
       <input
         value={amount}
         onChange={(event) => setAmount(event.target.value)}

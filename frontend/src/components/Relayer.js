@@ -5,29 +5,29 @@ import { smt } from "circomlib";
 const Relayer = (props) => {
 
     const doAfterDepoly = props.doAfterDepoly;
-    const users = props.users;
+    const userList = props.userList;
     const provider = props.provider;
-    const numbers = props.numbers;
-    const [inputs, setInputs] = useState();
+    const [inputs, setInputs] = useState([]);
 
     useEffect(() => {
-        generateInputs(numbers)
-    }, [users])
+        generateInputs()
+    }, [userList])
 
-    const generateInputs = (numbers) => {
-        const inputs = []
-        for (let i = 0; i < numbers; i++) {
-            let inputName = `publicKey${i}`
-            let userPubKey = users[i]?.keyPair[0][0].toString()
-            inputs.push(<input
+    const generateInputs = () => {
+        
+        console.log(userList);
+        const tempInputs = userList.map((user, index) => {
+            let inputName = `publicKey${index}`
+            let userPubKey = user?.keyPair[0][0]
+            return <input
                 type="text"
                 name={inputName}
                 value={userPubKey}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 disabled
-            />)
-        }
-        setInputs(inputs);
+            />
+        })
+        setInputs(tempInputs);
     }
 
     const generateRootAndDeployContract = async () => {
