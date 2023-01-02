@@ -1,9 +1,10 @@
 import { genPrivKey } from "maci-crypto";
+import { eddsa } from "circomlib";
 import { User } from "../data/User";
- 
+
 const genKeyPair = () => {
   const prvKey = genPrivKey().toString();
-  return [ eddsa.prv2pub(prvKey), prvKey]
+  return [eddsa.prv2pub(prvKey), prvKey]
 }
 
 const createUser = (userName) => {
@@ -15,4 +16,4 @@ const createUser = (userName) => {
   return new User(genKeyPair())
 }
 
-module.exports = { createUser }
+export { createUser }

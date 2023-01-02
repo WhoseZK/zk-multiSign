@@ -5,7 +5,7 @@ const UserComponent = (props) => {
 
     const onCreateUser = props.onCreateUser;
     const [username, setUsername] = useState("");
-    const [keyPair, setKeyPair] = useState(["", ""]);
+    const [keyPair, setKeyPair] = useState([["", ""], ""]);
 
     const createUserChildren = () => {
         if (!username) {
@@ -14,6 +14,7 @@ const UserComponent = (props) => {
             return;
         }
         const user = createUser(username);
+        console.log(user)
         setKeyPair(user.keyPair);
         onCreateUser(user);
     }
@@ -29,7 +30,7 @@ const UserComponent = (props) => {
                 onChange={(event) => setUsername(event.target.value)}
             />
             <label htmlFor="sharingKey">Public Key: </label>
-            <p>{keyPair[0]}</p>
+            <p>{keyPair[0][0]}</p>
             <label htmlFor="sharingKey">Private Key: </label>
             <p>{keyPair[1]}</p>
 

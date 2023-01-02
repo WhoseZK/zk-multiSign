@@ -32,4 +32,4 @@ const generatePoints = async (n) => {
     };
 };
 
-module.exports = { Fq, generatePoints }
+export { Fq, generatePoints }

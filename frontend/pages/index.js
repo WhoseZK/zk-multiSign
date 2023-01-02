@@ -162,6 +162,11 @@ export default function Home() {
     }
   };
 
+  const handleCreateUser = (user) => {
+     setUsers((prevState) => {return {...prevState, user}})
+     console.log(users)
+  }
+
   return (
     <div className="container">
       <main className="grid grid-cols-3 gap-6">
@@ -171,7 +176,7 @@ export default function Home() {
 
         <UserComponents
           numbers = {5}
-          onCreateUser = {(user) => this.setUsers((prevState) => {return {...prevState, user}})} /> 
+          onCreateUser = {(user) => handleCreateUser(user)} /> 
       </main>  
       {/* <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>

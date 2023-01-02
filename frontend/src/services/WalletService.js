@@ -121,5 +121,5 @@ const updateBalance = async (provider, contract, erc20, destination) => {
 };
 
 
-module.exports = { deployZkWallet, initZkWallet, deployErc20, tranferToken, updateBalance }
+export { deployZkWallet, initZkWallet, deployErc20, tranferToken, updateBalance }
 
