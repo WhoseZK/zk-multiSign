@@ -103,7 +103,7 @@ export default function Home() {
 
   // get Zkp automatically
   useEffect(() => {
-    if (data && users) {
+    if (data && users && points) {
       for(let i=0;i<users.length;i++) {
         users[i].updatePoint(points[i]);
       }
@@ -149,7 +149,7 @@ export default function Home() {
   const doAfterDeploy = (tree, zkWalletAmt, balance) => {
     setTree(tree);
     setContract(zkWalletAmt);
-    zkWalletAmt(balance);
+    setZkWalletAmt(balance);
   }
 
   return (

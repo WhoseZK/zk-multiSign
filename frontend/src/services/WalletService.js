@@ -1,15 +1,11 @@
 import { ethers } from "ethers";
 
 const ABI = [
-    "constructor(IVerifier _zkMultiSignVerifier, IVerifier _memberVerifier, IVerifier _inclusionVerifier, uint64 _duration, uint256 _memberRoot)",
+    "constructor(address _zkMultiSignVerifier, address _memberVerifier, address _inclusionVerifier, uint64 _duration, uint256 _memberRoot)",
     "function raiseTransaction(uint256 _sharingKeys, address _destination, uint256 _amount, uint256[] calldata publicSignals, uint256[8] calldata proof) external",
     "function updateRoot(uint256[] calldata publicSignals, uint256[8] calldata) external",
     "function transferToken(address tokenAddress, uint256[] calldata publicSignals, uint256[8] calldata proof) external"
 ];
-
-const VERIFIER_ABI = [
-    "function verifyProof(uint256[] calldata publicSignals, uint256[8] calldata proof) external view returns (bool r)"
-]
 
 const ERC20_ABI = [
     "constructor(address zkWallet)",
@@ -27,16 +23,12 @@ const deployZkWallet = async (provider, memberRoot) => {
         )
     }
 
-    const zkMultiSignVerfier = new ethers.Contract(process.env.zkMultiSignVerifier, VERIFIER_ABI, signer)
-    const updateVerfier = new ethers.Contract(process.env.updateMemberTreeVerifier, VERIFIER_ABI, signer)
-    const inclusionVerifer = new ethers.Contract(process.env.inclusionOfMemberVerifier, VERIFIER_ABI, signer)
     const bytecode = process.env.multiSignByteCode;
-
     const factory = new ethers.ContractFactory(ABI, bytecode, signer);
     const contract = await factory.deploy(
-        zkMultiSignVerfier,
-        updateVerfier,
-        inclusionVerifer,
+        process.env.zkMultiSignVerifier,
+        process.env.updateMemberTreeVerifier,
+        process.env.inclusionOfMemberVerifier,
         600, // default 10 min
         memberRoot
     );
@@ -47,33 +39,30 @@ const deployZkWallet = async (provider, memberRoot) => {
 };
 
 // send eth & erc20 after the deployment of erc20
-const initZkWallet = async (provider, contract, erc20, amount) => {
+const initZkWallet = async (provider, zkwallet, amount) => {
 
-    const transferAmt = amount ? amount : 1000;
+    const transferAmt = ethers.utils.parseEther(amount.toString()).toString();
     const signer = provider.getSigner();
-    const ZK_WALLET = contract.address;
+    const ZK_WALLET = zkwallet.address;
     let tx = await signer.sendTransaction({
         to: ZK_WALLET,
-        value: ethers.utils.parseEther(transferAmt),
+        value: transferAmt
     });
     await tx.wait();
-    tx = await erc20.transfer(ZK_WALLET, ethers.utils.parseEther(transferAmt));
-    await tx.wait();
-    return updateBalance(provider, contract, erc20);
+    return updateBalance(provider, zkwallet);
 };
 
 // deploy erc20
-const deployErc20 = async (provider, erc20Address) => {
+const deployErc20 = async (provider, zkWalletAddress, erc20Address) => {
     if (localStorage.getItem("erc20") || erc20Address) {
         const erc20 = erc20Address ? erc20Address : localStorage.getItem("erc20")
         return new ethers.Contract(erc20, ERC20_ABI, provider.getSigner());
     }
 
-    const bytecode = process.env.erc20ByteCode;
+    const bytecode = process.env.mockErc20ByteCode;
     const signer = provider.getSigner();
     const factory = new ethers.ContractFactory(ERC20_ABI, bytecode, signer);
-
-    const erc20 = await factory.deploy(address);
+    const erc20 = await factory.deploy(zkWalletAddress);
     await erc20.deployTransaction.wait();
     console.log("deploy erc20 at address:", erc20.address);
 
@@ -99,12 +88,12 @@ const tranferToken = async (contract) => {
 };
 
 // update balance for Wallet, Destination, ZkWallet
-const updateBalance = async (provider, contract, erc20, destination) => {
+const updateBalance = async (provider, zkwallet, erc20, destination) => {
 
     // wallet amount
-    const ZK_WALLET = contract.address;
+    const ZK_WALLET = zkwallet.address;
     const eth_balance = (await provider.getBalance(ZK_WALLET)).toString();
-    const erc20_balance = (await erc20.balanceOf(ZK_WALLET)).toString();
+    const erc20_balance = !erc20 ? 0 : (await erc20.balanceOf(ZK_WALLET)).toString() 
 
     // destination amount
     if (destination) {
@@ -117,6 +106,8 @@ const updateBalance = async (provider, contract, erc20, destination) => {
             dErc20: dErc20
         }
     }
+
+    console.log(eth_balance, erc20_balance)
 
     return {
         eth: eth_balance,
