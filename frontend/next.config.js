@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   serverRuntimeConfig: {
-    PROJECT_ROOT: __dirname
+    PROJECT_ROOT: __dirname, 
+    verifiers: "InclusionOfMember, UpdateMemberTree, ZkMultiSign"
   },
   webpack(config) {
     config.resolve.fallback = {

@@ -1,33 +1,31 @@
 import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
-import { ethers } from "ethers";
-import { generatePoints, generateProof } from "../src/utils/Utils";
-import Points from "../src/components/Points";
+import { Contract, ethers } from "ethers";
+import { genPrivKey } from "maci-crypto";
+import { eddsa, poseidon, smt } from "circomlib";
 import useSWR from "swr";
+import User from "../src/data/User";
+import { generateInclusionOfMemberProof } from "../src/services/ZkpService";
+import { generatePoints } from "../src/services/SSSService";
+import { deployZkWallet, initZkWallet } from "../src/services/WalletService"
+import { createUser } from "../src/services/UserService"
+import Points from "../src/components/Points";
+import UserComponents from "../src/components/UserComponents";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
-const ABI = [
-  "constructor(uint256 sharingKey, uint256 hashItem, address iVerifier)",
-  "function transferToken(address tokenAddress, address destination, uint256 amount, uint256[2] calldata publicSignals, uint256[8] calldata proof) external payable",
-  "function updatePolynominal(uint256[2] calldata publicSignals, uint256[8] calldata proof) external",
-];
-
-const ERC20_ABI = [
-  "constructor(address zkWallet)",
-  "function balanceOf(address account) public view returns (uint256)",
-  "function transfer(address to, uint256 amount) external returns (bool)",
-];
 
 export default function Home() {
   const { data, error } = useSWR("/api/zkp", fetcher);
   const [provider, setProvider] = useState();
   const address = useAddress();
   const [contract, setContract] = useState();
+  const [users, setUsers] = useState();
 
   // constructor args
-  const [sharingKey, setSharingKey] = useState();
-  const [hashItem, setHashItem] = useState();
+  const [tree, setTree] = useState();
+  const [sharingKeys, setSharingKeys] = useState();
+  // const [memberRoot, setMemberRoot] = useState();
   const [points, setPoints] = useState([]);
 
   // transfer token args
@@ -36,6 +34,7 @@ export default function Home() {
   );
   const [destination, setDestination] = useState();
   const [amount, setAmount] = useState();
+  const [zkproof, setZkproof] = useState();
   const [publicSignals, setPublicSignals] = useState([]);
   const [proof, setProof] = useState([]);
 
@@ -54,6 +53,7 @@ export default function Home() {
     erc20: "Loading",
   });
 
+  // initial all attributes
   useEffect(() => {
     const envInit = () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -83,6 +83,7 @@ export default function Home() {
     envInit();
   }, []);
 
+  // update destination detail
   useEffect(() => {
     const updateDestination = async () => {
       const eth = (await provider.getBalance(destination)).toString();
@@ -102,174 +103,91 @@ export default function Home() {
 
   // get Zkp automatically
   useEffect(() => {
-    if (data) {
-      getZkp();
+    if (data && users) {
+      for(let i=0;i<users.length;i++) {
+        users[i].updatePoint(points[i]);
+      }
     }
   }, [points]);
 
-  // update balance for Wallet, Destination, ZkWallet
-  const updateBalance = async (contract, mockErc20, provider, address) => {
-    const ZK_WALLET = contract.address;
-    const eth = (await provider.getBalance(ZK_WALLET)).toString();
-    const erc20 = (await mockErc20.balanceOf(ZK_WALLET)).toString();
-    setZkWallet((preState) => {
-      return {
-        ...preState,
-        eth,
-        erc20,
-      };
-    });
-    if (address) {
-      const aErc20 = (await mockErc20.balanceOf(address)).toString();
-      setWalletAmt(aErc20);
+  // update tree detail
+  useEffect(() => {
+    if(!users) return
+    users.forEach(user => {
+      user.updateTreeDetail(tree)
+    })
+  }, [tree])
+
+  const createTreeAndContract = async (publicKeys, erc20Address, defaultAmt) => {
+    
+    // gather all public keys and build the tree
+    const tree = await smt.newMemEmptyTrie();
+    var index = 0;
+    publicKeys.forEach(publicKey => {
+      tree.insert(index++, publicKey);
+    })
+
+    setTree(tree);
+
+    // deploy the zkWallet 
+    const zkWallet = await deployZkWallet(provider, tree.root)
+    setContract(zkWallet);
+
+    // init the wallet (transfer the default amount token to wallet)
+    var erc20 = await deployErc20(provider, erc20Address);
+    await initZkWallet(provider, zkWallet, erc20, defaultAmt)
+    const balance = await updateBalance(provider, zkWallet, erc20)
+    setZkWallet((prevState) => {return {...prevState, balance}});
+  };
+
+  const raiseTransaction = async (user, destination, amount) => {
+    
+    // hardcode the memberNumber
+    // TODO check add into local storage if required
+    const result = generatePoints(5)
+    result.points.forEach(point => {
+      // TODO send the point and sharingKeys to every user
+    })
+
+    const signature = eddsa.signMiMC(user.keyPair[1], user.keyPair[0][0])
+    const {publicSig, proof} = await generateInclusionOfMemberProof(user, signature, data)
+
+    try {
+      const txn = await contract.raiseTransaction(sharingKeys, destination, amount, publicSig, proof)
+      await txn.wait();
+      setSharingKeys(result.sharingKeys);
+      setPoints(result.points);
+    } catch (error) {
+      console.log(`Raise Error in raiseTransaction ${error}`)
     }
-    if (destination) {
-      const dEth = (await provider.getBalance(destination)).toString();
-      const dErc20 = (await mockErc20.balanceOf(destination)).toString();
-      setDestinationAmt((prevState) => {
-        return {
-          ...prevState,
-          eth: dEth,
-          erc20: dErc20,
-        };
-      });
-    }
-  };
-
-  // send eth & erc20 after the deployment of erc20
-  const transferToZkWallet = async () => {
-    const signer = provider.getSigner();
-    const ZK_WALLET = contract.address;
-    let tx = await signer.sendTransaction({
-      to: ZK_WALLET,
-      value: ethers.utils.parseEther("1000"),
-    });
-    await tx.wait();
-    tx = await mockErc20.transfer(ZK_WALLET, ethers.utils.parseEther("1000"));
-    await tx.wait();
-    const eth = (await provider.getBalance(ZK_WALLET)).toString();
-    const erc20 = (await mockErc20.balanceOf(ZK_WALLET)).toString();
-    setZkWallet((preState) => {
-      return {
-        ...preState,
-        eth,
-        erc20,
-      };
-    });
-  };
-
-  const createPoints = async () => {
-    let sharingKey, hashItem, points;
-    if (localStorage.getItem("sharingKey")) {
-      sharingKey = localStorage.getItem("sharingKey");
-      hashItem = localStorage.getItem("hashItem");
-      points = JSON.parse(localStorage.getItem("points"));
-    } else {
-      const result = await generatePoints(3);
-      sharingKey = result.sharingKey;
-      hashItem = result.hashItem;
-      points = result.points;
-      localStorage.setItem("sharingKey", sharingKey);
-      localStorage.setItem("hashItem", hashItem);
-      localStorage.setItem("points", JSON.stringify(points));
-    }
-
-    setSharingKey(sharingKey);
-    setHashItem(hashItem);
-    setPoints(points);
-  };
-
-  const getZkp = async () => {
-    const { publicSignals, proof } = await generateProof(
-      points[0],
-      points[1],
-      points[2],
-      data
-    );
-    setPublicSignals(publicSignals);
-    setProof(proof);
-    console.log("Public Signals:", publicSignals);
-    console.log("Proof:", proof);
-  };
-
-  const deployZkWallet = async () => {
-    if (localStorage.getItem("zkWallet")) {
-      setContract(
-        new ethers.Contract(
-          localStorage.getItem("zkWallet"),
-          ABI,
-          provider.getSigner()
-        )
-      );
-    } else {
-      const VERIFIER_ADDRESS = process.env.verifierAddress;
-      const bytecode = process.env.multiSignByteCode;
-
-      const signer = provider.getSigner();
-      const factory = new ethers.ContractFactory(ABI, bytecode, signer);
-      const contract = await factory.deploy(
-        sharingKey,
-        hashItem,
-        VERIFIER_ADDRESS
-      );
-      await contract.deployTransaction.wait();
-      setContract(contract.connect(signer));
-      localStorage.setItem("zkWallet", contract.address);
-      console.log("deploy zk-wallet at address:", contract.address);
-    }
-  };
-
-  const deployErc20 = async () => {
-    if (localStorage.getItem("mockErc20")) {
-      const erc20 = new ethers.Contract(
-        localStorage.getItem("mockErc20"),
-        ERC20_ABI,
-        provider.getSigner()
-      );
-      setMockErc20(erc20);
-    } else {
-      const bytecode = process.env.mockErc20ByteCode;
-      const signer = provider.getSigner();
-      const factory = new ethers.ContractFactory(ERC20_ABI, bytecode, signer);
-
-      const erc20 = await factory.deploy(address);
-      await erc20.deployTransaction.wait();
-      console.log("deploy mockerc20 at address:", erc20.address);
-      localStorage.setItem("mockErc20", erc20.address);
-      setMockErc20(erc20.connect(signer));
-      updateBalance(contract, erc20, provider, address);
-    }
-  };
-
-  // default setting: transfer ETH
-  const tranferToken = async () => {
-    console.log("Contract Address:", contract.address);
-    let txn = await contract.transferToken(
-      tokenAddress,
-      destination,
-      ethers.utils.parseUnits(amount, "ether"),
-      publicSignals,
-      proof,
-      { gasLimit: 2_000_000 }
-    );
-    console.log(txn);
-    txn.wait((confirm = 1)).then(() => {
-      updateBalance(contract, mockErc20, provider, address);
-    });
   };
 
   return (
     <div className="container">
-      <main className={styles.main}>
+      <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
           <ConnectWallet />
         </div>
-        <div className={styles.container}>
-          <button className={styles.button} onClick={createPoints}>
+
+        <UserComponents
+          numbers = {5}
+          onCreateUser = {(user) => this.setUsers((prevState) => {return {...prevState, user}})} /> 
+      </main>  
+      {/* <main className="grid grid-cols-3 gap-6">
+        <div className={styles.connect}>
+          <ConnectWallet />
+        </div>
+        
+        <UserComponents
+          numbers = {5}
+          onCreateUser = {(user) => setUsers((prevState) => {return {...prevState, user}})} /> 
+        
+        <div className="container">
+          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={createPoints}>
             Create Points
           </button>
         </div>
-        <div className={styles.container}>
+        <div className="container">
           <label htmlFor="sharingKey">Sharing Key: </label>
           <p>{sharingKey}</p>
           <label htmlFor="hashItem">Hash Item: </label>
@@ -277,22 +195,22 @@ export default function Home() {
         </div>
 
         <Points points={points} />
-        <div className={styles.container}>
-          <button className={styles.button} onClick={deployZkWallet}>
+        <div className="container">
+          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={deployZkWallet}>
             Create Zk Wallet
           </button>
         </div>
-        <div className={styles.container}>
-          <button className={styles.button} onClick={deployErc20}>
+        <div className="container">
+          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={deployErc20}>
             Create Mock Token
           </button>
-          <button className={styles.button} onClick={getZkp}>
+          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={getZkp}>
             Get ZKP
           </button>
         </div>
         {mockErc20 && (
           <>
-            <div className={styles.container}>
+            <div className="container">
               <h2>Wallet Balance: </h2>
               <label htmlFor="wallet amount">ERC20: </label>
               <p>{walletAmt / 1e18} whoses</p>
@@ -302,7 +220,7 @@ export default function Home() {
               <label htmlFor="erc20">ERC20: </label>
               <p>{destinationAmt.erc20 / 1e18} whoses</p>
             </div>
-            <div className={styles.container}>
+            <div className="container">
               <h2>Zk Wallet Balance: </h2>
               <label htmlFor="eth">ETH: </label>
               <p>{zkWallet.eth / 1e18} ethers</p>
@@ -312,13 +230,13 @@ export default function Home() {
                 Transfer To Zk Wallet
               </button>
             </div>
-            <div className={styles.container}>
+            <div className="container">
               <h2>Transfer Token: </h2>
               <label>
                 Choose Transfering Token:
                 <select
                   value={tokenAddress}
-                  className={styles.input}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   onChange={(event) => setTokenAddress(event.target.value)}
                 >
                   <option value={ethers.constants.AddressZero}>
@@ -332,7 +250,7 @@ export default function Home() {
                 type="text"
                 name="destination"
                 value={destination}
-                className={styles.input}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 onChange={(event) => setDestination(event.target.value)}
               />
               <label htmlFor="amount">Amount: </label>
@@ -341,15 +259,15 @@ export default function Home() {
                 name="amount"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                className={styles.input}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
-              <button className={styles.button} onClick={tranferToken}>
+              <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={tranferToken}>
                 Transfer Tokens
               </button>
             </div>
           </>
         )}
-      </main>
+      </main> */}
     </div>
   );
 }
