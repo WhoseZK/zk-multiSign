@@ -8,10 +8,10 @@ import useSWR from "swr";
 import User from "../src/data/User";
 import { generateInclusionOfMemberProof } from "../src/services/ZkpService";
 import { generatePoints } from "../src/services/SSSService";
-import { deployZkWallet, initZkWallet } from "../src/services/WalletService"
 import { createUser } from "../src/services/UserService"
 import Points from "../src/components/Points";
 import UserComponents from "../src/components/UserComponents";
+import Relayer from "../src/components/Relayer";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -48,7 +48,7 @@ export default function Home() {
   });
   const [walletAmt, setWalletAmt] = useState("Loading");
 
-  const [zkWallet, setZkWallet] = useState({
+  const [zkWalletAmt, setZkWalletAmt] = useState({
     eth: "Loading",
     erc20: "Loading",
   });
@@ -59,9 +59,9 @@ export default function Home() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       let contract;
       setProvider(provider);
-      if (localStorage.getItem("zkWallet")) {
+      if (localStorage.getItem("zkWalletAmt")) {
         contract = new ethers.Contract(
-          localStorage.getItem("zkWallet"),
+          localStorage.getItem("zkWalletAmt"),
           ABI,
           provider.getSigner()
         );
@@ -118,28 +118,6 @@ export default function Home() {
     })
   }, [tree])
 
-  const createTreeAndContract = async (publicKeys, erc20Address, defaultAmt) => {
-    
-    // gather all public keys and build the tree
-    const tree = await smt.newMemEmptyTrie();
-    var index = 0;
-    publicKeys.forEach(publicKey => {
-      tree.insert(index++, publicKey);
-    })
-
-    setTree(tree);
-
-    // deploy the zkWallet 
-    const zkWallet = await deployZkWallet(provider, tree.root)
-    setContract(zkWallet);
-
-    // init the wallet (transfer the default amount token to wallet)
-    var erc20 = await deployErc20(provider, erc20Address);
-    await initZkWallet(provider, zkWallet, erc20, defaultAmt)
-    const balance = await updateBalance(provider, zkWallet, erc20)
-    setZkWallet((prevState) => {return {...prevState, balance}});
-  };
-
   const raiseTransaction = async (user, destination, amount) => {
     
     // hardcode the memberNumber
@@ -164,7 +142,13 @@ export default function Home() {
 
   const handleCreateUser = (user) => {
      setUsers((prevState) => {return {...prevState, user}})
-     console.log(users)
+     console.log("users", users)
+  }
+
+  const doAfterDeploy = (tree, zkWalletAmt, balance) => {
+    setTree(tree);
+    setContract(zkWalletAmt);
+    zkWalletAmt(balance);
   }
 
   return (
@@ -177,6 +161,11 @@ export default function Home() {
         <UserComponents
           numbers = {5}
           onCreateUser = {(user) => handleCreateUser(user)} /> 
+
+        <Relayer provider = {provider} 
+          numbers = {5} 
+          doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
+
       </main>  
       {/* <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
@@ -201,7 +190,7 @@ export default function Home() {
 
         <Points points={points} />
         <div className="container">
-          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={deployZkWallet}>
+          <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={deployZkWalletAmt}>
             Create Zk Wallet
           </button>
         </div>
@@ -228,10 +217,10 @@ export default function Home() {
             <div className="container">
               <h2>Zk Wallet Balance: </h2>
               <label htmlFor="eth">ETH: </label>
-              <p>{zkWallet.eth / 1e18} ethers</p>
+              <p>{zkWalletAmt.eth / 1e18} ethers</p>
               <label htmlFor="erc20">ERC20: </label>
-              <p>{zkWallet.erc20 / 1e18} whoses</p>
-              <button onClick={transferToZkWallet}>
+              <p>{zkWalletAmt.erc20 / 1e18} whoses</p>
+              <button onClick={transferToZkWalletAmt}>
                 Transfer To Zk Wallet
               </button>
             </div>
