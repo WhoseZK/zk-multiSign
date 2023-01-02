@@ -79,9 +79,6 @@ export default function Home() {
         setMockErc20(mockErc20);
         updateBalance(contract, mockErc20, provider, address);
       }
-      // window.addEventListener("beforeunload", () => {
-      //   localStorage.clear();
-      // });
     };
     envInit();
   }, []);
@@ -262,7 +259,7 @@ export default function Home() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="container">
       <main className={styles.main}>
         <div className={styles.connect}>
           <ConnectWallet />
