@@ -14,8 +14,10 @@ const UserComponent = (props) => {
             return;
         }
         const user = createUser(username);
-        console.log(user)
-        setKeyPair(user.keyPair);
+        setKeyPair([
+            [user.keyPair[0][0].toString(), user.keyPair[0][1].toString()],
+            user.keyPair[1]
+        ]);
         onCreateUser(user);
     }
 
@@ -29,9 +31,12 @@ const UserComponent = (props) => {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 onChange={(event) => setUsername(event.target.value)}
             />
-            <label htmlFor="sharingKey">Public Key: </label>
+
+            <label htmlFor="publicKey">Public Key x: </label>
             <p>{keyPair[0][0]}</p>
-            <label htmlFor="sharingKey">Private Key: </label>
+            <label htmlFor="publicKey">Public Key y: </label>
+            <p>{keyPair[0][1]}</p>
+            <label htmlFor="privatekey">Private Key: </label>
             <p>{keyPair[1]}</p>
 
             <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={createUserChildren}>

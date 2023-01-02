@@ -1,19 +1,53 @@
+import { useState } from "react";
+
 const Relayer = (props) => {
-  const onCreateUser = props.onCreateUser;
-  const numbers = props.numbers;
 
-  return (
-    <div className="container">
-        <label htmlFor="sharingKey">Public Key: </label>
-        <p>{keyPair[0]}</p>
-        <label htmlFor="sharingKey">Private Key: </label>
-        <p>{keyPair[1]}</p>
+    const doAfterDepoly = props.doAfterDepoly;
+    const numbers = props.numbers;
+    const [pubKeys, setPubKeys] = useState([])
 
-        <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={createUserChildren}>
-            Init User
-        </button>
-    </div>
-  );
+    const generateInputs = (numbers) => {
+        const inputs = []
+        for (let i = 0; i < numbers; i++) {
+            let inputName = `publicKey${i}`
+            inputs.push(<input
+                type="text"
+                name={inputName}
+                value={username}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                onChange={(event) => setPubKeys((prevState) => { return { ...prevState, event.target.value } })}
+            />)
+        }
+    }
+
+    const generateRootAndDeployContract = () => {
+        
+            // gather all public keys and build the tree
+        const tree = await smt.newMemEmptyTrie();
+        var index = 0;
+        publicKeys.forEach(publicKey => {
+            tree.insert(index++, publicKey);
+        })
+
+        // deploy the zkWallet 
+        const zkWallet = await deployZkWallet(provider, tree.root)
+
+        // init the wallet (transfer the default amount token to wallet)
+        var erc20 = await deployErc20(provider, erc20Address);
+        await initZkWallet(provider, zkWallet, erc20, defaultAmt)
+        const balance = await updateBalance(provider, zkWallet, erc20)
+        
+        doAfterDepoly(tree, zkWallet, balance)
+        setTree(tree);
+        setContract(zkWallet);
+        setZkWallet((prevState) => {return {...prevState, balance}});
+    }
+
+    return (
+        <div className="container">
+           { generateInputs(numbers) }
+        </div>
+    );
 };
 
-export default UserComponents;
+export default Relayer;
