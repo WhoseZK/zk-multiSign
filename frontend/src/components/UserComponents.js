@@ -1,20 +1,19 @@
 import UserComponent from "./UserComponent";
 
 const UserComponents = (props) => {
-  const onCreateUser = props.onCreateUser;
-
-  const createMultipleUser = (numbers) => {
-    const result = []
-    for (let i =0 ; i < numbers; i++) {
-        result[i] = <UserComponent onCreateUser = {onCreateUser}/>
-    }
-    return result;
-  }
-
-  const userComponets = createMultipleUser(props.numbers);
-
+  console.log("userList", props.userList);
   return (
-    <> {userComponets} </>
+    <>
+    {props.userList.map((user, index) => 
+     <UserComponent
+        key={index}
+        name={user.userName}
+        x={user.keyPair[0][0].toString()}
+        y={user.keyPair[0][1].toString()}
+        prvKey={user.keyPair[1]}
+      />
+    )}
+    </>
   );
 };
 

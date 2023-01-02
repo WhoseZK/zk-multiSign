@@ -1,6 +1,7 @@
 
 class User {
-    constructor(keyPair) {
+    constructor(userName, keyPair) {
+        this.userName = userName;
         this.keyPair = keyPair;
     }
 

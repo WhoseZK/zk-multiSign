@@ -12,6 +12,7 @@ import { deployZkWallet, initZkWallet } from "../src/services/WalletService"
 import { createUser } from "../src/services/UserService"
 import Points from "../src/components/Points";
 import UserComponents from "../src/components/UserComponents";
+import UserInputComponent from "../src/components/UserInputComponent";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -20,7 +21,7 @@ export default function Home() {
   const [provider, setProvider] = useState();
   const address = useAddress();
   const [contract, setContract] = useState();
-  const [users, setUsers] = useState();
+  const [users, setUsers] = useState([]);
 
   // constructor args
   const [tree, setTree] = useState();
@@ -163,7 +164,9 @@ export default function Home() {
   };
 
   const handleCreateUser = (user) => {
-     setUsers((prevState) => {return {...prevState, user}})
+     setUsers((prevState) => {
+      return [user, ...prevState];
+    })
      console.log(users)
   }
 
@@ -174,9 +177,12 @@ export default function Home() {
           <ConnectWallet />
         </div>
 
-        <UserComponents
-          numbers = {5}
-          onCreateUser = {(user) => handleCreateUser(user)} /> 
+        <div className="container">
+            <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
+        </div>
+        <div className="container">
+            <UserComponents userList={users}/>
+        </div>
       </main>  
       {/* <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
