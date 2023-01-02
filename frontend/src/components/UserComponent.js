@@ -1,8 +1,13 @@
 import { useState } from "react";
+import { ethers } from "ethers";
+import { generatePoints } from "../services/SSSService" 
+import { generateInclusionOfMemberProof } from "../services/ZkpService" 
+import { eddsa, poseidon } from "circomlib";
 
 const UserComponent = (props) => {
   const [destination, setDestination] = useState("");
-  const [tokenAddress, setTokenAddress] = useState("");
+  const [sharingKeys, setSharingKeys] = useState("");
+  const [tokenAddress, setTokenAddress] = useState(ethers.constants.AddressZero);
   const [amount, setAmount] = useState(0);
 
   const name = props.user.userName;
@@ -11,12 +16,8 @@ const UserComponent = (props) => {
   const prvKey = props.user.keyPair[1];
 
   const raiseTransaction = async (event) => {
-    event.prventDefault();
-    // hardcode the memberNumber
-    // TODO check add into local storage if required
-    const result = await generatePoints(5);
-
-    const signature = eddsa.signMiMC(props.prvKey, props.x);
+    event.preventDefault();
+    const signature = eddsa.signMiMC(prvKey, poseidon([BigInt(x), BigInt(y)]));
     const { publicSig, proof } = await generateInclusionOfMemberProof(
       props.user,
       signature,
@@ -24,12 +25,16 @@ const UserComponent = (props) => {
     );
 
     try {
+      const result = await generatePoints(5);
       const txn = await props.contract.raiseTransaction(
         result.sharingKeys,
         destination,
         amount,
         publicSig,
-        proof
+        proof, 
+        {
+            gasLimit: 2_000_000
+        }
       );
       await txn.wait();
       setSharingKeys(result.sharingKeys);
@@ -52,19 +57,23 @@ const UserComponent = (props) => {
       <label htmlFor="destination">Destination: </label>
       <input
         value={destination}
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         onChange={(event) => setDestination(event.target.value)}
       />
       <label htmlFor="tokenAddress">Token Address: </label>
       <input
         value={tokenAddress}
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         onChange={(event) => setTokenAddress(event.target.value)}
       />
       <label htmlFor="amount">Amount: </label>
       <input
         value={amount}
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         onChange={(event) => setAmount(event.target.value)}
       />
-      <button onClick={raiseTransaction}>Raise Transaction</button>
+      <button className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" 
+        onClick={raiseTransaction}>Raise Transaction</button>
     </div>
   );
 };

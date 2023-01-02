@@ -15,6 +15,7 @@ export default function Home() {
   const address = useAddress();
   const [contract, setContract] = useState();
   const [users, setUsers] = useState([]);
+  const [userNames, setUserNames] = useState([]);
 
   // constructor args
   const [tree, setTree] = useState();
@@ -98,6 +99,7 @@ export default function Home() {
   useEffect(() => {
     if (data && users && points) {
       for(let i=0;i<users.length;i++) {
+        if(typeof users[i] !== 'User') continue
         users[i].updatePoint(points[i]);
       }
     }
@@ -105,22 +107,24 @@ export default function Home() {
 
   // update tree detail
   useEffect(() => {
-    users && users.forEach(user => {
-      user.updateTreeDetail(tree)
+    users && users.forEach(async (user, index) => {
+      const result = await tree.find(index);
+      user.updateTreeDetail(result, tree.root, index);
     })
   }, [tree])
 
   const handleCreateUser = (user) => {
-     if(user.old) return
+     if(user.old && users.map(it => it.userName).includes(user.userName)) return
      setUsers((prevState) => {
       return [user, ...prevState];
     })
   }
 
-  const doAfterDeploy = (tree, zkWalletAmt, balance) => {
-    setTree(tree);
-    setContract(zkWalletAmt);
-    setZkWalletAmt(balance);
+  const doAfterDeploy = (tree, zkWallet, zkWalletAmt) => {
+    
+    if(tree) setTree(tree);
+    if(zkWallet) setContract(zkWallet);
+    if(zkWalletAmt) setZkWalletAmt(zkWalletAmt);
   }
 
   return (
@@ -128,6 +132,9 @@ export default function Home() {
       <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
           <ConnectWallet />
+          <Relayer provider = {provider} 
+              userList = {users}
+              doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
         </div>
 
         <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
@@ -140,9 +147,7 @@ export default function Home() {
           />
         }
 
-        <Relayer provider = {provider} 
-          userList = {users}
-          doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
+       
 
       </main>  
       {/* <main className="grid grid-cols-3 gap-6">

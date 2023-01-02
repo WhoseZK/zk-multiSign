@@ -11,7 +11,8 @@ const genKeyPair = () => {
 const createUser = (username) => {
 
   if (localStorage.getItem(username)) {
-     const user = JSON.parse(localStorage.getItem(username));
+     const tempUser = JSON.parse(localStorage.getItem(username));
+     const user = new User(tempUser.userName, tempUser.keyPair);
      user.old = true;
      return user;
   }

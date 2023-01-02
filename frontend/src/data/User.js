@@ -5,10 +5,10 @@ class User {
         this.keyPair = keyPair;
     }
 
-    updateTreeDetail(treeResult) {
+    updateTreeDetail(treeResult, root, index) {
         this.siblings = treeResult.siblings;
-        this.index = treeResult.index;
-        this.root = treeResult.root
+        this.index = index;
+        this.root = root
     }
 
     updatePoint(point) {

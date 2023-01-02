@@ -2,7 +2,7 @@ const { groth16 } = require("snarkjs");
 const { poseidon } = require("circomlibjs");
 
 const generateInclusionOfMemberProof = async (
-  user, sig, zkp
+  user, sig, zkey
 ) => {
   // depth of smt : 10
   const length = 10 - user.siblings.length;
@@ -11,29 +11,26 @@ const generateInclusionOfMemberProof = async (
   }
 
   const input = {
-    key: user.index,
     pubKey: user.keyPair[0],
     point: user.keyPair[0],
     sig: [sig.S, sig.R8[0], sig.R8[1]],
     root: user.root,
     key: user.index,
-    siblings: user.siblings,
+    siblings: user.siblings
   };
 
   const result = await groth16.fullProve(
-    input,
-    zkp.inclusionofmember[0],
-    zkp.inclusionofmember[1]
+    input, zkey[0], zkey[1]
   );
 
   return {
-    public: result.publicSignals,
+    publicSig: result.publicSignals,
     proof: packToSolidityProof(result.proof),
   };
 };
 
 const generateUpdateMemberProof = async (
-  user, newPubKey, sig, zkp
+  user, newPubKey, sig, zkey
 ) => {
   // depth of smt : 10
   const length = 10 - user.siblings.length;
@@ -51,20 +48,18 @@ const generateUpdateMemberProof = async (
   };
 
   const result = await groth16.fullProve(
-    input,
-    zkp.updatemembertree[0],
-    zkp.updatemembertree[1]
+    input, zkey[0], zkey[1]
   );
 
   return {
-    public: result.publicSignals,
+    publicSig: result.publicSignals,
     proof: packToSolidityProof(result.proof),
   };
 };
 
 const generateMultiSignProof = async (
   userA, userB, userC,
-  sigB, sigC, zkp
+  sigB, sigC, zkey
 ) => {
   const input = {
     enabled: 1,
@@ -77,13 +72,11 @@ const generateMultiSignProof = async (
   };
 
   const result = await groth16.fullProve(
-    input,
-    zkp.zkmultisign[0],
-    zkp.zkmultisign[1]
+    input, zkey[0], zkey[1]
   );
 
   return {
-    public: result.publicSignals,
+    publicSig: result.publicSignals,
     proof: packToSolidityProof(result.proof),
   };
 };

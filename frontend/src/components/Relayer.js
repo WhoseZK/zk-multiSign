@@ -10,6 +10,8 @@ const Relayer = (props) => {
     const [inputs, setInputs] = useState([]);
     const [erc20Address, setErc20Address] = useState();
     const [defaultAmt, setDefaultAmt] = useState(1000);
+    const [zkWallet, setZkWallet] = useState();
+    const [erc20Contract, setErc20Contract] = useState();
     const [zkwalletAmt, setZkWalletAmt] = useState(0);
 
     useEffect(() => {
@@ -37,22 +39,31 @@ const Relayer = (props) => {
 
         // gather all public keys and build the tree
         const tree = await smt.newMemEmptyTrie();
-        var index = 0;
         const pubKeys = userList.map(user => user.keyPair[0][0])
         for (let i = 0; i < pubKeys.length; i++) {
-            await tree.insert(index++, pubKeys[i]);
+            await tree.insert(i, pubKeys[i]);
         }
 
         // deploy the zkWallet 
-        const zkWallet = await deployZkWallet(provider, tree.root)
+        const zkWallet = await deployZkWallet(provider, tree.root);
+        setZkWallet(zkWallet);
 
         // init the wallet (transfer the default amount token to wallet)
         await initZkWallet(provider, zkWallet, defaultAmt)
         var erc20Contract = await deployErc20(provider, zkWallet.address, erc20Address);
+        setErc20Contract(erc20Contract);
+        setErc20Address(erc20Contract.address);
+
         const {erc20, eth} = await updateBalance(provider, zkWallet, erc20Contract);
 
         setZkWalletAmt((prevState) => {return {...prevState, erc20, eth}})
         doAfterDepoly(tree, zkWallet, {erc20, eth})
+    }
+
+    const refreshZkWalletAmt = async () => {
+        const {erc20, eth} = await updateBalance(provider, zkWallet, erc20Contract);
+        setZkWalletAmt((prevState) => {return {...prevState, erc20, eth}});
+        doAfterDepoly(null, null, {erc20, eth});
     }
 
     return (
@@ -83,6 +94,10 @@ const Relayer = (props) => {
                 <label htmlFor="erc20Addres">ZKWallet ERC20 Amount: </label>
                 <p>{zkwalletAmt.erc20}</p> 
             </div>
+
+            <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={refreshZkWalletAmt}>
+                Refresh ZkWallet
+            </button>
         </div>
     );
 };
