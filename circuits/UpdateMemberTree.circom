@@ -43,7 +43,7 @@ template UpdateMemberTree(nLevels) {
     }
 
     verifyUpdate.oldKey <== keyOfTree;
-    verifyUpdate.oldValue <== oldValue;
+    verifyUpdate.oldValue <== oldPubKey[0];
     // is not old tree
     verifyUpdate.isOld0 <== 0;
     verifyUpdate.newKey <== keyOfTree;
@@ -55,4 +55,4 @@ template UpdateMemberTree(nLevels) {
     newRoot <== verifyUpdate.newRoot;
 }
 
-component main = UpdateMemberTree(10);
+component main { public [ oldRoot, oldPubKey ] } = UpdateMemberTree(10);

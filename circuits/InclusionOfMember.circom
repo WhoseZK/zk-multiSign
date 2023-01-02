@@ -7,6 +7,9 @@ include "./node_modules/circomlib/circuits/smt/smtverifier.circom";
 template InclusionOfMember() {
     // eddsa pub key
     signal input pubKey[2];
+    // set sss point if verify send transfer
+    // set pubkey if raise transaction
+    signal input point[2];
 
     // signature
     signal input sig[3];
@@ -19,8 +22,8 @@ template InclusionOfMember() {
     // value
     signal value;
     component poseidon = Poseidon(2);
-    poseidon.inputs[0] <== pubKey[0];
-    poseidon.inputs[1] <== pubKey[1];
+    poseidon.inputs[0] <== point[0];
+    poseidon.inputs[1] <== point[1];
     value <== poseidon.out;
 
     component verifySignature = EdDSAMiMCVerifier();
@@ -40,11 +43,11 @@ template InclusionOfMember() {
         verifySMT.siblings[i] <== siblings[i];
     }
     verifySMT.oldKey <== key;
-    verifySMT.oldValue <== value;
+    verifySMT.oldValue <== pubKey[0];
     verifySMT.isOld0 <== 0;
     verifySMT.key <== key;
     verifySMT.value <== value;
     verifySMT.fnc <== 0;
 }
 
-component main { public [ root, pubKey ] } = InclusionOfMember();
+// component main { public [ root, pubKey ] } = InclusionOfMember();

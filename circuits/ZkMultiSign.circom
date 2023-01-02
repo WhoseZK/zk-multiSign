@@ -2,7 +2,7 @@ pragma circom 2.0.0;
 
 include "./node_modules/circomlib/circuits/poseidon.circom";
 include "Lagrange.circom";
-include "VerifyPoint.circom";
+include "InclusionOfMember.circom";
 
 template CalItem() {
 
@@ -23,58 +23,65 @@ template CalItem() {
 }
 
 // polynominal function to the power of 3
-template ZkMultiSign() {
-    signal input enabled;
+template ZkMultiSign(nLevels) {
+    signal input root;
 
     // point A
     signal input pointA[2];
-    // point B
-    signal input pubKeyB[2];
-    signal input pointB[2];
-    signal input sigB[3];
-    // point C
-    signal input pubKeyC[2];
-    signal input pointC[2];
-    signal input sigC[3];
+    // point B & C
+    signal input pubKey[2][2];
+    signal input point[2][2];
+    signal input sig[2][3];
+    signal input key[2];
+    signal input siblings[2][nLevels];
     
+    var i;
     signal output nullifier;
     
     // verify point B
-    component verifyPointB = VerifyPoint();
-    verifyPointB.enabled <== enabled;
-    verifyPointB.Ax <== pubKeyB[0];
-    verifyPointB.Ay <== pubKeyB[1];
-    verifyPointB.S <== sigB[0];
-    verifyPointB.R8x <== sigB[1];
-    verifyPointB.R8y <== sigB[2];
-    verifyPointB.x <== pointB[0];
-    verifyPointB.y <== pointB[1];
+    component verifyPointB = InclusionOfMember();
+    verifyPointB.pubKey[0] <== pubKey[0][0];
+    verifyPointB.pubKey[1] <== pubKey[0][1];
+    verifyPointB.point[0] <== point[0][0];
+    verifyPointB.point[1] <== point[0][1];
+    verifyPointB.sig[0] <== sig[0][0];
+    verifyPointB.sig[1] <== sig[0][1];
+    verifyPointB.sig[2] <== sig[0][2];
+    verifyPointB.root <== root;
+    verifyPointB.key <== key[0];
+    for (i = 0; i < nLevels; i++) {
+        verifyPointB.siblings[i] <== siblings[0][i];
+    }
 
     // verify point C
-    component verifyPointC = VerifyPoint();
-    verifyPointC.enabled <== enabled;
-    verifyPointC.Ax <== pubKeyC[0];
-    verifyPointC.Ay <== pubKeyC[1];
-    verifyPointC.S <== sigC[0];
-    verifyPointC.R8x <== sigC[1];
-    verifyPointC.R8y <== sigC[2];
-    verifyPointC.x <== pointC[0];
-    verifyPointC.y <== pointC[1];
+    component verifyPointC = InclusionOfMember();
+    verifyPointC.pubKey[0] <== pubKey[1][0];
+    verifyPointC.pubKey[1] <== pubKey[1][1];
+    verifyPointC.point[0] <== point[1][0];
+    verifyPointC.point[1] <== point[1][1];
+    verifyPointC.sig[0] <== sig[1][0];
+    verifyPointC.sig[1] <== sig[1][1];
+    verifyPointC.sig[2] <== sig[1][2];
+    verifyPointC.root <== root;
+    verifyPointC.key <== key[1];
+    for (i = 0; i < nLevels; i++) {
+        verifyPointC.siblings[i] <== siblings[1][i];
+    }
 
     component lagrange0 = Lagrange_3();
     lagrange0.x0 <== pointA[0];
-    lagrange0.x1 <== pointB[0];
-    lagrange0.x2 <== pointC[0];
+    lagrange0.x1 <== point[0][0];
+    lagrange0.x2 <== point[1][0];
 
     component lagrange1 = Lagrange_3();
-    lagrange1.x0 <== pointB[0];
+    lagrange1.x0 <== point[0][0];
     lagrange1.x1 <== pointA[0];
-    lagrange1.x2 <== pointC[0];
+    lagrange1.x2 <== point[1][0];
 
     component lagrange2 = Lagrange_3();
-    lagrange2.x0 <== pointC[0];
+    lagrange2.x0 <== point[1][0];
     lagrange2.x1 <== pointA[0];
-    lagrange2.x2 <== pointB[0];
+    lagrange2.x2 <== point[0][0];
 
     // a2
     component calItem_a2 = CalItem();
@@ -82,8 +89,8 @@ template ZkMultiSign() {
     calItem_a2.x[1] <== lagrange1.out[2];
     calItem_a2.x[2] <== lagrange2.out[2];
     calItem_a2.y[0] <== pointA[1];
-    calItem_a2.y[1] <== pointB[1];
-    calItem_a2.y[2] <== pointC[1];
+    calItem_a2.y[1] <== point[0][1];
+    calItem_a2.y[2] <== point[1][1];
 
     // a1
     component calItem_a1 = CalItem();
@@ -91,8 +98,8 @@ template ZkMultiSign() {
     calItem_a1.x[1] <== lagrange1.out[1];
     calItem_a1.x[2] <== lagrange2.out[1];
     calItem_a1.y[0] <== pointA[1];
-    calItem_a1.y[1] <== pointB[1];
-    calItem_a1.y[2] <== pointC[1];
+    calItem_a1.y[1] <== point[0][1];
+    calItem_a1.y[2] <== point[1][1];
 
     // sharingKey
     component calItem_a0 = CalItem();
@@ -100,8 +107,8 @@ template ZkMultiSign() {
     calItem_a0.x[1] <== lagrange1.out[0];
     calItem_a0.x[2] <== lagrange2.out[0];
     calItem_a0.y[0] <== pointA[1];
-    calItem_a0.y[1] <== pointB[1];
-    calItem_a0.y[2] <== pointC[1];
+    calItem_a0.y[1] <== point[0][1];
+    calItem_a0.y[2] <== point[1][1];
 
     component poseidon = Poseidon(3);
     poseidon.inputs[0] <== calItem_a2.out;
@@ -111,4 +118,4 @@ template ZkMultiSign() {
     nullifier <== poseidon.out;
 }
 
-component main { public [ pointB, sigB, pointC, sigC ] } = ZkMultiSign();
+component main { public [ point, sig ] } = ZkMultiSign(10);
