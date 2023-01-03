@@ -6,7 +6,12 @@ import useSWR from "swr";
 import UserComponents from "../src/components/UserComponents";
 import UserInputComponent from "../src/components/UserInputComponent";
 import Relayer from "../src/components/Relayer";
-import { getNewTransactions, ABI, ERC20_ABI } from "../src/services/WalletService";
+import {
+  getNewTransactions,
+  ABI,
+  ERC20_ABI,
+} from "../src/services/WalletService";
+import EventComponents from "../src/components/EventComponents";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -17,6 +22,8 @@ export default function Home() {
   const [contract, setContract] = useState();
   const [users, setUsers] = useState([]);
   const [userNames, setUserNames] = useState([]);
+  const [event, setEvent] = useState([]);
+  const [txRaiser, setTxRaiser] = useState();
 
   // constructor args
   const [tree, setTree] = useState();
@@ -72,7 +79,7 @@ export default function Home() {
           provider.getSigner()
         );
         setMockErc20(mockErc20);
-        updateBalance(contract, mockErc20, provider, address);
+        updateBalance(provider, contract, mockErc20, address);
       }
     };
     envInit();
@@ -107,19 +114,24 @@ export default function Home() {
         users.forEach((user) =>
           localStorage.setItem(user.userName, JSON.stringify(user))
         );
-        await getNewTransactions(contract);
+        const events = await getNewTransactions(contract);
+        setEvent(events);
       }
-    }
+    };
     updateUser();
   }, [points]);
 
   // update tree detail
   useEffect(() => {
-    users &&
+    const updateUserSMT = async () => {
       users.forEach(async (user, index) => {
         const result = await tree.find(index);
         user.updateTreeDetail(result, tree.root, index);
       });
+    }
+    if (users.length > 0) {
+      updateUserSMT();
+    }
   }, [tree]);
 
   const handleCreateUser = (user) => {
@@ -129,6 +141,35 @@ export default function Home() {
       return [user, ...prevState];
     });
   };
+
+  const handleApprove = (approvedUser) => {
+    setUsers((prevState) => {
+      prevState.map(user => {
+        if (user.userName == approvedUser.userName) {
+          return {...user,
+            approve: approvedUser.approve,
+            sig: approvedUser.sig
+          }
+        }
+      })
+      return [...prevState];
+    })
+  }
+
+  const handleZkpInputs = (zkpInputs) => {
+    const inputReceiver = users.find(user => user.userName == txRaiser);
+    inputReceiver.updateZkpInputs(zkpInputs);
+    setUsers((prevState) => {
+      prevState.map(user => {
+        if (user.userName == inputReceiver.userName) {
+          return {...user,
+            zkpInputs: inputReceiver.zkpInputs
+          }
+        }
+      })
+      return [...prevState];
+    })
+  }
 
   const doAfterDeploy = (tree, zkWallet, zkWalletAmt) => {
     if (tree) setTree(tree);
@@ -144,6 +185,7 @@ export default function Home() {
           <Relayer
             provider={provider}
             userList={users}
+            forwardZkpInputs={(zkpInputs) => handleZkpInputs(zkpInputs)}
             doAfterDepoly={(tree, zkWallet, zkWalletAmt) =>
               doAfterDeploy(tree, zkWallet, zkWalletAmt)
             }
@@ -155,11 +197,17 @@ export default function Home() {
           <UserComponents
             userList={users}
             inclusionOfMember={data.inclusionofmember}
+            zkMultiSign={data.zkmultisign}
             onPointsChanged={setPoints}
             onSharingKeysChanged={setSharingKeys}
+            onTransactionRaised={setTxRaiser}
+            onSumbitApprove={(user) => handleApprove(user)}
             contract={contract}
+            events={event}
+            raiser={txRaiser}
           />
         )}
+        <EventComponents eventList={event} />
       </main>
       {/* <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>

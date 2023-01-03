@@ -18,9 +18,9 @@ async function deployVerifier(contractName) {
 }
 
 async function main() {
-  deployVerifier("InclusionOfMemberVerifier")
-  deployVerifier("UpdateMemberTreeVerifier")
-  deployVerifier("ZkMultiSignVerifier")
+  await deployVerifier("InclusionOfMemberVerifier")
+  await deployVerifier("UpdateMemberTreeVerifier")
+  await deployVerifier("ZkMultiSignVerifier")
 }
 
 // We recommend this pattern to be able to use async/await everywhere

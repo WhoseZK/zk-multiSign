@@ -1,19 +1,34 @@
 import { useState } from "react";
 import { ethers } from "ethers";
-import { generatePoints } from "../services/SSSService" 
-import { generateInclusionOfMemberProof } from "../services/ZkpService" 
+import { generatePoints } from "../services/SSSService";
+import {
+  generateInclusionOfMemberProof,
+  generateMultiSignProof,
+} from "../services/ZkpService";
 import { eddsa, poseidon } from "circomlib";
 
 const UserComponent = (props) => {
   const [destination, setDestination] = useState("");
-  const [tokenAddress, setTokenAddress] = useState(ethers.constants.AddressZero);
+  const [tokenAddress, setTokenAddress] = useState(
+    ethers.constants.AddressZero
+  );
   const [amount, setAmount] = useState(0);
 
   const name = props.user.userName;
   const x = props.user.keyPair[0][0];
   const y = props.user.keyPair[0][1];
   const prvKey = props.user.keyPair[1];
-  // const point = props.user.point;
+  const point = props.user.point;
+  const eventLength = props.events.length;
+  const zkpInputs = props.user.zkpInputs;
+  const isRaiser = name == props.raiser;
+
+  const approveHandler = (event) => {
+    event.preventDefault();
+    const signature = eddsa.signMiMC(prvKey, poseidon(point));
+    props.user.updateApprove(signature);
+    props.onSubmitApprove(props.user);
+  };
 
   const raiseTransaction = async (event) => {
     event.preventDefault();
@@ -32,16 +47,31 @@ const UserComponent = (props) => {
         tokenAddress,
         ethers.utils.parseEther(amount.toString()),
         publicSig,
-        proof, 
-        {
-            gasLimit: 2_000_000
-        }
+        proof
       );
-      const txresult = await txn.wait();
-      console.log("Transaction:", txresult);
+      await txn.wait();
       props.onSharingKeysChanged(result.sharingKeys);
       props.onPointsChanged(result.points);
+      props.onTransactionRaised(props.user.userName);
       console.log("sharing key:", result.sharingKeys);
+    } catch (error) {
+      console.log(`Raise Error in raiseTransaction ${error}`);
+    }
+  };
+
+  const sendTransaction = async (event) => {
+    event.preventDefault();
+    console.log("zkp inputs in user component", zkpInputs)
+    const { publicSig, proof } = await generateMultiSignProof(
+      props.user,
+      zkpInputs[0],
+      zkpInputs[1],
+      props.zkMultiSign
+    );
+    try {
+      const txn = await props.contract.transferToken(publicSig, proof);
+      await txn.wait();
+      console.log("Transfer Token Succeed!");
     } catch (error) {
       console.log(`Raise Error in raiseTransaction ${error}`);
     }
@@ -57,10 +87,14 @@ const UserComponent = (props) => {
       <p>{y}</p>
       <label htmlFor="privatekey">Private Key: </label>
       <p>{prvKey}</p>
-      {/* <label htmlFor="pointx">Point x: </label>
-      <p>{point[0].toString()}</p>
-      <label htmlFor="privatekey">Point y: </label>
-      <p>{point[1].toString()}</p> */}
+      {eventLength > 0 && (
+        <>
+          <label htmlFor="pointx">SSS Point x: </label>
+          <p>{point[0].toString()}</p>
+          <label htmlFor="privatekey">SSS Point y: </label>
+          <p>{point[1].toString()}</p>
+        </>
+      )}
       <label htmlFor="destination">Destination: </label>
       <input
         value={destination}
@@ -79,8 +113,28 @@ const UserComponent = (props) => {
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         onChange={(event) => setAmount(event.target.value)}
       />
-      <button className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" 
-        onClick={raiseTransaction}>Raise Transaction</button>
+      <button
+        className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        onClick={raiseTransaction}
+      >
+        Raise Transaction
+      </button>
+      {eventLength > 0 && !isRaiser && (
+        <button
+          className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          onClick={approveHandler}
+        >
+          Approve Transaction
+        </button>
+      )}
+      {zkpInputs && (
+        <button
+          className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          onClick={sendTransaction}
+        >
+          Send Transaction
+        </button>
+      )}
     </div>
   );
 };

@@ -58,19 +58,19 @@ const generateUpdateMemberProof = async (
 };
 
 const generateMultiSignProof = async (
-  userA, userB, userC,
-  sigB, sigC, zkey
+  userA, userB, userC, zkey
 ) => {
+  fulfillSibling(userB.siblings);
+  fulfillSibling(userC.siblings);
   const input = {
-    enabled: 1,
+    root: userA.root,
     pointA: userA.point,
-    publicKey: [userB.keyPair[0], userC.keyPair[0]],
+    pubKey: [userB.keyPair[0], userC.keyPair[0]],
     point: [userB.point, userC.point],
-    sig: [[sigB.S, sigB.R8[0], sigB.R8[1]], [sigC.S, sigC.R8[0], sigC.R8[1]]],
-    key: [userB.index, userC.inedx],
+    sig: [[userB.sig.S, userB.sig.R8[0], userB.sig.R8[1]], [userC.sig.S, userC.sig.R8[0], userC.sig.R8[1]]],
+    key: [userB.index, userC.index],
     siblings: [userB.siblings, userC.siblings]
   };
-
   const result = await groth16.fullProve(
     input, zkey[0], zkey[1]
   );
