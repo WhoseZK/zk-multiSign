@@ -1,24 +1,39 @@
 const { task, types } = require("hardhat/config");
 
 task("deploy", "Deploy ZKWallet contract")
-    .addParam("sharingKey", "Sharing Key in group", undefined, types.string)
-    .addParam("hashItem", "Hash Item in group", undefined, types.string)
-    .addOptionalParam("verifier", "Verifier contract address", undefined, types.string)
-    .setAction(async ({ sharingKey, hashItem, verifier }, { ethers, _ }) => {
-        if (!verifier) {
-
-            const Verifier = await ethers.getContractFactory("Verifier");
-            const _verifier = await Verifier.deploy();
-
-            await _verifier.deployed();
-            verifier = _verifier.address;
-
-            console.log(`deploy verifier to testnet in ${_verifier.address}`);
+    .addParam("merkleRoot", "Merkle Root of SMT Tree", undefined, types.string)
+    .addParam("duration", "MultiSign Duration", 600, types.int)
+    .addOptionalParam("multiSignVerifier", "multiSignVerifier contract address", undefined, types.string)
+    .addOptionalParam("updateMemberVerifier", "updateMemberVerifier contract address", undefined, types.string)
+    .addOptionalParam("inclusionOfMemberVerifier", "inclusionOfMemberVerifier contract address", undefined, types.string)
+    .setAction(async ({ merkleRoot, duration, multiSignVerifier, updateMemberVerifier, inclusionOfMemberVerifier }, { ethers, _ }) => {
+        if (!multiSignVerifier) {
+            const MultiSignVerifier = await ethers.getContractFactory("ZkMultiSignVerifier");
+            const _multiSignVerifier = await MultiSignVerifier.deploy();
+            await _multiSignVerifier.deployed();
+            multiSignVerifier = _multiSignVerifier.address;
+            console.log(`deploy multisig verifier to testnet in ${multiSignVerifier}`);
+        }
+        
+        if (!updateMemberVerifier) {
+            const UpdateMemberVerifier = await ethers.getContractFactory("UpdateMemberTreeVerifier");
+            const _updateMemberVerifier = await UpdateMemberVerifier.deploy();
+            await _updateMemberVerifier.deployed();
+            updateMemberVerifier = _updateMemberVerifier.address;
+            console.log(`deploy update member verifier to testnet in ${updateMemberVerifier}`);
+        }
+        
+        if(!inclusionOfMemberVerifier) {
+            const InclusionOfMemberVerifier = await ethers.getContractFactory("InclusionOfMemberVerifier");
+            const _inclusionOfMemberVerifier = await InclusionOfMemberVerifier.deploy();
+            await _inclusionOfMemberVerifier.deployed();
+            inclusionOfMemberVerifier = _inclusionOfMemberVerifier.address;
+            console.log(`deploy inclusion member verifier to testnet in ${inclusionOfMemberVerifier}`);
         }
 
         // build zkWallet
         const ZkWallet = await ethers.getContractFactory("ZkWallet");
-        const zkWallet = await ZkWallet.deploy(sharingKey, hashItem, verifier);
+        const zkWallet = await ZkWallet.deploy(multiSignVerifier, updateMemberVerifier, inclusionOfMemberVerifier, duration, merkleRoot);
 
         const MockERC20 = await ethers.getContractFactory("MockERC20");
         const erc20 = await MockERC20.deploy(zkWallet.address);

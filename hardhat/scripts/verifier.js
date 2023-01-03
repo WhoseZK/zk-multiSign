@@ -6,13 +6,21 @@
 // global scope, and execute the script.
 const hre = require("hardhat");
 
+async function deployVerifier(contractName) {
+  const Verifier = await hre.ethers.getContractFactory(contractName);
+  const verifier = await Verifier.deploy();
+
+  await verifier.deployed();
+
+  console.log(`deploy ${contractName} to testnet in ${verifier.address}`);
+
+  return verifier;
+}
+
 async function main() {
-    const Verifier = await hre.ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
-
-    await verifier.deployed();
-
-    console.log(`deploy verifier to testnet in ${verifier.address}`);
+  await deployVerifier("InclusionOfMemberVerifier")
+  await deployVerifier("UpdateMemberTreeVerifier")
+  await deployVerifier("ZkMultiSignVerifier")
 }
 
 // We recommend this pattern to be able to use async/await everywhere

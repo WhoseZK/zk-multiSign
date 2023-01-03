@@ -22,7 +22,9 @@
     "react": "^18.2",
     "react-dom": "^18.2",
     "snarkjs": "^0.5.0",
-    "swr": "^2.0.0"
+    "swr": "^2.0.0",
+    "tailwindcss": "^3.2.4",
+    "maci-crypto": "^1.1.1"
   },
   "devDependencies": {
     "eslint": "8.11.0",

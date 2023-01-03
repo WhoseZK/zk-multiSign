@@ -2,58 +2,45 @@ import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
 import { ethers } from "ethers";
-import { generatePoints, generateProof } from "../src/utils/Utils";
-import Points from "../src/components/Points";
 import useSWR from "swr";
+import UserComponents from "../src/components/UserComponents";
+import UserInputComponent from "../src/components/UserInputComponent";
+import Relayer from "../src/components/Relayer";
+import {
+  getNewTransactions,
+  ABI,
+  ERC20_ABI,
+} from "../src/services/WalletService";
+import EventComponents from "../src/components/EventComponents";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
-const ABI = [
-  "constructor(uint256 sharingKey, uint256 hashItem, address iVerifier)",
-  "function transferToken(address tokenAddress, address destination, uint256 amount, uint256[2] calldata publicSignals, uint256[8] calldata proof) external payable",
-  "function updatePolynominal(uint256[2] calldata publicSignals, uint256[8] calldata proof) external",
-];
-
-const ERC20_ABI = [
-  "constructor(address zkWallet)",
-  "function balanceOf(address account) public view returns (uint256)",
-  "function transfer(address to, uint256 amount) external returns (bool)",
-];
 
 export default function Home() {
   const { data, error } = useSWR("/api/zkp", fetcher);
   const [provider, setProvider] = useState();
   const address = useAddress();
   const [contract, setContract] = useState();
+  const [users, setUsers] = useState([]);
+  const [event, setEvent] = useState([]);
+  const [txRaiser, setTxRaiser] = useState();
 
   // constructor args
-  const [sharingKey, setSharingKey] = useState();
-  const [hashItem, setHashItem] = useState();
+  const [tree, setTree] = useState();
+  const [sharingKeys, setSharingKeys] = useState();
+  // const [memberRoot, setMemberRoot] = useState();
   const [points, setPoints] = useState([]);
-
-  // transfer token args
-  const [tokenAddress, setTokenAddress] = useState(
-    ethers.constants.AddressZero
-  );
   const [destination, setDestination] = useState();
-  const [amount, setAmount] = useState();
-  const [publicSignals, setPublicSignals] = useState([]);
-  const [proof, setProof] = useState([]);
 
   // deploy ERC20
   const [mockErc20, setMockErc20] = useState();
 
   // check wallet amount
-  const [destinationAmt, setDestinationAmt] = useState({
-    eth: "Loading",
-    erc20: "Loading",
-  });
-  const [walletAmt, setWalletAmt] = useState("Loading");
-
-  const [zkWallet, setZkWallet] = useState({
+  const [zkWalletAmt, setZkWalletAmt] = useState({
     eth: "Loading",
     erc20: "Loading",
   });
 
+  // initial all attributes
   useEffect(() => {
     const envInit = () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -66,8 +53,7 @@ export default function Home() {
           provider.getSigner()
         );
         setContract(contract);
-        setSharingKey(localStorage.getItem("sharingKey"));
-        setHashItem(localStorage.getItem("hashItem"));
+        setSharingKeys(localStorage.getItem("sharingKeys"));
         setPoints(JSON.parse(localStorage.getItem("points")));
       }
       if (localStorage.getItem("mockErc20")) {
@@ -77,15 +63,13 @@ export default function Home() {
           provider.getSigner()
         );
         setMockErc20(mockErc20);
-        updateBalance(contract, mockErc20, provider, address);
+        updateBalance(provider, contract, mockErc20, address);
       }
-      // window.addEventListener("beforeunload", () => {
-      //   localStorage.clear();
-      // });
     };
     envInit();
   }, []);
 
+  // update destination detail
   useEffect(() => {
     const updateDestination = async () => {
       const eth = (await provider.getBalance(destination)).toString();
@@ -105,254 +89,251 @@ export default function Home() {
 
   // get Zkp automatically
   useEffect(() => {
-    if (data) {
-      getZkp();
-    }
+    const updateUser = async () => {
+      if (data && users && points) {
+        for (let i = 0; i < users.length; i++) {
+          //if(typeof users[i] !== 'User') continue
+          users[i].updatePoint(points[i]);
+        }
+        users.forEach((user) =>
+          localStorage.setItem(user.userName, JSON.stringify(user))
+        );
+
+        if(contract) {
+          const events = await getNewTransactions(contract);
+          setEvent(events);
+        }
+      }
+    };
+    updateUser();
   }, [points]);
 
-  // update balance for Wallet, Destination, ZkWallet
-  const updateBalance = async (contract, mockErc20, provider, address) => {
-    const ZK_WALLET = contract.address;
-    const eth = (await provider.getBalance(ZK_WALLET)).toString();
-    const erc20 = (await mockErc20.balanceOf(ZK_WALLET)).toString();
-    setZkWallet((preState) => {
-      return {
-        ...preState,
-        eth,
-        erc20,
-      };
-    });
-    if (address) {
-      const aErc20 = (await mockErc20.balanceOf(address)).toString();
-      setWalletAmt(aErc20);
-    }
-    if (destination) {
-      const dEth = (await provider.getBalance(destination)).toString();
-      const dErc20 = (await mockErc20.balanceOf(destination)).toString();
-      setDestinationAmt((prevState) => {
-        return {
-          ...prevState,
-          eth: dEth,
-          erc20: dErc20,
-        };
+  // update tree detail
+  useEffect(() => {
+    const updateUserSMT = async () => {
+      users.forEach(async (user, index) => {
+        const result = await tree.find(index);
+        user.updateTreeDetail(result, tree.root, index);
       });
     }
-  };
+    if (users.length > 0) {
+      updateUserSMT();
+    }
+  }, [tree]);
 
-  // send eth & erc20 after the deployment of erc20
-  const transferToZkWallet = async () => {
-    const signer = provider.getSigner();
-    const ZK_WALLET = contract.address;
-    let tx = await signer.sendTransaction({
-      to: ZK_WALLET,
-      value: ethers.utils.parseEther("1000"),
-    });
-    await tx.wait();
-    tx = await mockErc20.transfer(ZK_WALLET, ethers.utils.parseEther("1000"));
-    await tx.wait();
-    const eth = (await provider.getBalance(ZK_WALLET)).toString();
-    const erc20 = (await mockErc20.balanceOf(ZK_WALLET)).toString();
-    setZkWallet((preState) => {
-      return {
-        ...preState,
-        eth,
-        erc20,
-      };
+  const handleCreateUser = (user) => {
+    if (user.old && users.map((it) => it.userName).includes(user.userName))
+      return;
+    setUsers((prevState) => {
+      return [user, ...prevState];
     });
   };
 
-  const createPoints = async () => {
-    let sharingKey, hashItem, points;
-    if (localStorage.getItem("sharingKey")) {
-      sharingKey = localStorage.getItem("sharingKey");
-      hashItem = localStorage.getItem("hashItem");
-      points = JSON.parse(localStorage.getItem("points"));
-    } else {
-      const result = await generatePoints(3);
-      sharingKey = result.sharingKey;
-      hashItem = result.hashItem;
-      points = result.points;
-      localStorage.setItem("sharingKey", sharingKey);
-      localStorage.setItem("hashItem", hashItem);
-      localStorage.setItem("points", JSON.stringify(points));
-    }
+  const handleApprove = (approvedUser) => {
+    setUsers((prevState) => {
+      prevState.map(user => {
+        if (user.userName == approvedUser.userName) {
+          return {...user,
+            approve: approvedUser.approve,
+            sig: approvedUser.sig
+          }
+        }
+      })
+      return [...prevState];
+    })
+  }
 
-    setSharingKey(sharingKey);
-    setHashItem(hashItem);
-    setPoints(points);
+  const handleZkpInputs = (zkpInputs) => {
+    const inputReceiver = users.find(user => user.userName == txRaiser);
+    inputReceiver.updateZkpInputs(zkpInputs);
+    setUsers((prevState) => {
+      prevState.map(user => {
+        if (user.userName == inputReceiver.userName) {
+          return {...user,
+            zkpInputs: inputReceiver.zkpInputs
+          }
+        }
+      })
+      return [...prevState];
+    })
+  }
+
+  const doAfterDeploy = (tree, zkWallet, zkWalletAmt) => {
+    if (tree) setTree(tree);
+    if (zkWallet) setContract(zkWallet);
+    if (zkWalletAmt) setZkWalletAmt(zkWalletAmt);
   };
 
-  const getZkp = async () => {
-    const { publicSignals, proof } = await generateProof(
-      points[0],
-      points[1],
-      points[2],
-      data
-    );
-    setPublicSignals(publicSignals);
-    setProof(proof);
-    console.log("Public Signals:", publicSignals);
-    console.log("Proof:", proof);
-  };
+  const setSharingKeyAndResetApprove = (sharingKeys) => {
+    setSharingKeys(sharingKeys);
+    users.map(user => {user.approve = false});
+  } 
 
-  const deployZkWallet = async () => {
-    if (localStorage.getItem("zkWallet")) {
-      setContract(
-        new ethers.Contract(
-          localStorage.getItem("zkWallet"),
-          ABI,
-          provider.getSigner()
-        )
-      );
-    } else {
-      const VERIFIER_ADDRESS = process.env.verifierAddress;
-      const bytecode = process.env.multiSignByteCode;
-
-      const signer = provider.getSigner();
-      const factory = new ethers.ContractFactory(ABI, bytecode, signer);
-      const contract = await factory.deploy(
-        sharingKey,
-        hashItem,
-        VERIFIER_ADDRESS
-      );
-      await contract.deployTransaction.wait();
-      setContract(contract.connect(signer));
-      localStorage.setItem("zkWallet", contract.address);
-      console.log("deploy zk-wallet at address:", contract.address);
-    }
-  };
-
-  const deployErc20 = async () => {
-    if (localStorage.getItem("mockErc20")) {
-      const erc20 = new ethers.Contract(
-        localStorage.getItem("mockErc20"),
-        ERC20_ABI,
-        provider.getSigner()
-      );
-      setMockErc20(erc20);
-    } else {
-      const bytecode = process.env.mockErc20ByteCode;
-      const signer = provider.getSigner();
-      const factory = new ethers.ContractFactory(ERC20_ABI, bytecode, signer);
-
-      const erc20 = await factory.deploy(address);
-      await erc20.deployTransaction.wait();
-      console.log("deploy mockerc20 at address:", erc20.address);
-      localStorage.setItem("mockErc20", erc20.address);
-      setMockErc20(erc20.connect(signer));
-      updateBalance(contract, erc20, provider, address);
-    }
-  };
-
-  // default setting: transfer ETH
-  const tranferToken = async () => {
-    console.log("Contract Address:", contract.address);
-    let txn = await contract.transferToken(
-      tokenAddress,
-      destination,
-      ethers.utils.parseUnits(amount, "ether"),
-      publicSignals,
-      proof,
-      { gasLimit: 2_000_000 }
-    );
-    console.log(txn);
-    txn.wait((confirm = 1)).then(() => {
-      updateBalance(contract, mockErc20, provider, address);
+  const afterExecTxn = () => {
+    users.map(user => {
+      user.zkpInputs = undefined;
+      user.approve = false;
     });
-  };
+    setEvent([])
+    setTxRaiser("")
+  }
 
   return (
-    <div className={styles.container}>
-      <main className={styles.main}>
-        <div className={styles.connect}>
+    <div className="bg-dark py-10">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="w-3">
           <ConnectWallet />
         </div>
-        <div className={styles.container}>
-          <button className={styles.button} onClick={createPoints}>
-            Create Points
-          </button>
-        </div>
-        <div className={styles.container}>
-          <label htmlFor="sharingKey">Sharing Key: </label>
-          <p>{sharingKey}</p>
-          <label htmlFor="hashItem">Hash Item: </label>
-          <p>{hashItem}</p>
+        <Relayer
+          provider={provider}
+          userList={users}
+          forwardZkpInputs={(zkpInputs) => handleZkpInputs(zkpInputs)}
+          doAfterDepoly={(tree, zkWallet, zkWalletAmt) =>
+            doAfterDeploy(tree, zkWallet, zkWalletAmt)
+          }
+        />
+
+        <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
+
+        <div className="grid grid-row-4 grid-flow-col gap-5">
+          {data && (
+            <UserComponents
+              userList={users}
+              inclusionOfMember={data.inclusionofmember}
+              zkMultiSign={data.zkmultisign}
+              onPointsChanged={setPoints}
+              onSharingKeysChanged={setSharingKeyAndResetApprove}
+              onTransactionRaised={setTxRaiser}
+              onSumbitApprove={(user) => handleApprove(user)}
+              contract={contract}
+              events={event}
+              raiser={txRaiser}
+              afterExecTxn={afterExecTxn}
+            />
+          )}
         </div>
 
-        <Points points={points} />
-        <div className={styles.container}>
-          <button className={styles.button} onClick={deployZkWallet}>
-            Create Zk Wallet
-          </button>
-        </div>
-        <div className={styles.container}>
-          <button className={styles.button} onClick={deployErc20}>
-            Create Mock Token
-          </button>
-          <button className={styles.button} onClick={getZkp}>
-            Get ZKP
-          </button>
-        </div>
-        {mockErc20 && (
-          <>
-            <div className={styles.container}>
-              <h2>Wallet Balance: </h2>
-              <label htmlFor="wallet amount">ERC20: </label>
-              <p>{walletAmt / 1e18} whoses</p>
-              <h2>Destination Balance: </h2>
-              <label htmlFor="destinationAmt">ETH: </label>
-              <p>{destinationAmt.eth / 1e18} ethers</p>
-              <label htmlFor="erc20">ERC20: </label>
-              <p>{destinationAmt.erc20 / 1e18} whoses</p>
-            </div>
-            <div className={styles.container}>
-              <h2>Zk Wallet Balance: </h2>
-              <label htmlFor="eth">ETH: </label>
-              <p>{zkWallet.eth / 1e18} ethers</p>
-              <label htmlFor="erc20">ERC20: </label>
-              <p>{zkWallet.erc20 / 1e18} whoses</p>
-              <button onClick={transferToZkWallet}>
-                Transfer To Zk Wallet
+        <EventComponents eventList={event} />
+
+        {/* <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-16 lg:px-8">
+          <div className="bg-slate-300 bg-green-500 bg-lime-300 text-center mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div className="inline-flex rounded-md shadow">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-5 py-3 text-base font-medium text-white hover:bg-indigo-700"
+              >
+                Get started
               </button>
             </div>
-            <div className={styles.container}>
-              <h2>Transfer Token: </h2>
-              <label>
-                Choose Transfering Token:
-                <select
-                  value={tokenAddress}
-                  className={styles.input}
-                  onChange={(event) => setTokenAddress(event.target.value)}
-                >
-                  <option value={ethers.constants.AddressZero}>
-                    {ethers.constants.AddressZero}
-                  </option>
-                  <option value={mockErc20.address}>{mockErc20.address}</option>
-                </select>
-              </label>
-              <label htmlFor="destination">Destination: </label>
-              <input
-                type="text"
-                name="destination"
-                value={destination}
-                className={styles.input}
-                onChange={(event) => setDestination(event.target.value)}
-              />
-              <label htmlFor="amount">Amount: </label>
-              <input
-                type="text"
-                name="amount"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                className={styles.input}
-              />
-              <button className={styles.button} onClick={tranferToken}>
-                Transfer Tokens
-              </button>
-            </div>
-          </>
-        )}
-      </main>
+          </div>
+        </div>
+
+        <div className="mt-5 md:col-span-2 md:mt-0">
+            <form action="#" method="POST">
+              <div className="shadow sm:overflow-hidden sm:rounded-md">
+                <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="col-span-3 sm:col-span-2">
+                      <label htmlFor="company-website" className="block text-sm font-medium text-gray-700">
+                        Website
+                      </label>
+                      <div className="mt-1 flex rounded-md shadow-sm">
+                        <input
+                          type="text"
+                          name="company-website"
+                          id="company-website"
+                          className="border-solid border border-gray-300 block w-full flex-1 rounded-r-md focus:border-indigo-500 focus:ring-indigo-500 "
+                          placeholder="www.example.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="about" className="block text-sm font-medium text-gray-700">
+                      About
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="about"
+                        name="about"
+                        rows={3}
+                        className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="you@example.com"
+                        defaultValue={''}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Brief description for your profile. URLs are hyperlinked.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-red-600 text-gray-700">Photo</label>
+                    <div className="mt-1 flex items-center">
+                      <span className="inline-block h-12 w-12 overflow-hidden rounded-full bg-gray-100">
+                        <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Cover photo</label>
+                    <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6">
+                      <div className="space-y-1 text-center">
+                        <svg
+                          className="mx-auto h-12 w-12 text-gray-400"
+                          stroke="currentColor"
+                          fill="none"
+                          viewBox="0 0 48 48"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <div className="flex text-sm text-gray-600">
+                          <label
+                            htmlFor="file-upload"
+                            className="relative cursor-pointer rounded-md bg-white font-medium text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:text-indigo-500"
+                          >
+                            <span>Upload a file</span>
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" />
+                          </label>
+                          <p className="pl-1">or drag and drop</p>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div className="bg-gray-50 px-4 py-3 text-right sm:px-6">
+                  <button
+                    type="submit"
+                    className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div> */}
+
+
+      </div>
     </div>
   );
 }

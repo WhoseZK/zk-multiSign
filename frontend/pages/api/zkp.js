@@ -4,11 +4,14 @@ import getConfig from "next/config";
 
 export default function handler(req, res) {
     const { serverRuntimeConfig } = getConfig();
+    const object = {};
     const folder = "zkp"
     const dir = path.join(serverRuntimeConfig.PROJECT_ROOT, "./public", folder);
-    //const dir = path.join(process.cwd(), folder);
     const fileNames = fs.readdirSync(dir);
-    const object = {};
-    fileNames.map(name => object[name.split(".")[1]] = path.join("/", folder, name));
+    fileNames.forEach(fileName => {
+        let key = fileName.split(".")[0].toLowerCase();
+        object[key] = object[key] || []
+        object[key].push(path.join("/", folder, fileName));
+    })
     res.status(200).json(object);
 }

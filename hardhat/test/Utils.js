@@ -1,68 +1,171 @@
 const { ZqField } = require("ffjavascript");
-const { groth16 } = require('snarkjs');
+const { groth16 } = require("snarkjs");
 const { poseidon } = require("circomlibjs");
 
 // Creates the finite field
-const SNARK_FIELD_SIZE = BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+const SNARK_FIELD_SIZE = BigInt(
+  "21888242871839275222246405745257275088548364400416034343698204186575808495617"
+);
 const Fq = new ZqField(SNARK_FIELD_SIZE);
 
-const generatePoints = async function(n) {
+const generatePoints = async (n) => {
+  // a2 x^2 + a1 x + sharingKey
+  const sharingKey = Fq.random();
+  const a1 = Fq.random();
+  const a2 = Fq.random();
 
-    // a2 x^2 + a1 x + sharingKey
-    const sharingKey = Fq.random();
-    const a1 = Fq.random();
-    const a2 = Fq.random();
+  const points = [];
 
-    const points = [];
+  for (let i = 0; i < n; i++) {
+    const x = Fq.random();
+    const y = Fq.add(
+      Fq.mul(Fq.mul(a2, x), x),
+      Fq.add(Fq.mul(a1, x), sharingKey)
+    );
 
-    for(let i=0;i<n;i++) {
+    points.push({ x, y });
+  }
 
-        const x = Fq.random();
-        const y = Fq.add(Fq.mul(Fq.mul(a2,x), x), Fq.add(Fq.mul(a1, x), sharingKey));
-        
-        points.push({x, y});
-    }
-    
-    return {
-        sharingKey: sharingKey.toString(),
-        hashItem: poseidon([a2, a1]).toString(),
-        points: points
-    }
-} 
+  return {
+    sharingKeys: poseidon([a2, a1, sharingKey]).toString(),
+    points: points,
+  };
+};
 
-const generateProof = async function(point0, point1, point2) {
+const generateInclusionOfMemberProof = async (
+  pubKey,
+  sig,
+  root,
+  key,
+  siblings
+) => {
+  // depth of smt : 10
+  const length = 10 - siblings.length;
+  for (let i = 0; i < length; i++) {
+    siblings.push(BigInt(0));
+  }
 
-    const input = {
-        x0: point0.x,
-        y0: point0.y,
-        x1: point1.x,
-        y1: point1.y,
-        x2: point2.x,
-        y2: point2.y
-    }
-    const result = await groth16.fullProve(input, 
-        "./statics/ZkMultiSign.wasm", "./statics/ZkMultiSign.zkey");
+  const input = {
+    pubKey: pubKey,
+    point: pubKey,
+    sig: [sig.S, sig.R8[0], sig.R8[1]],
+    root: root,
+    key: key,
+    siblings: siblings,
+  };
 
-    return {
-        "public": result.publicSignals,
-        "proof": packToSolidityProof(result.proof)
-    }
+  const result = await groth16.fullProve(
+    input,
+    "./statics/InclusionOfMember.wasm",
+    "./statics/InclusionOfMember.zkey"
+  );
+
+  return {
+    public: result.publicSignals,
+    proof: packToSolidityProof(result.proof),
+  };
+};
+
+const generateUpdateMemberProof = async (
+  oldRoot,
+  siblings,
+  keyOfTree,
+  oldPubKey,
+  newPubKey,
+  sig
+) => {
+  // depth of smt : 10
+  const length = 10 - siblings.length;
+  for (let i = 0; i < length; i++) {
+    siblings.push(BigInt(0));
+  }
+
+  const input = {
+    oldRoot: oldRoot,
+    siblings: siblings,
+    keyOfTree: keyOfTree,
+    oldPubKey: oldPubKey,
+    newValue: newPubKey[0],
+    sig: [sig.S, sig.R8[0], sig.R8[1]],
+  };
+
+  const result = await groth16.fullProve(
+    input,
+    "./statics/UpdateMemberTree.wasm",
+    "./statics/UpdateMemberTree.zkey"
+  );
+
+  return {
+    public: result.publicSignals,
+    proof: packToSolidityProof(result.proof),
+  };
+};
+
+const fulfillSiblings = (siblings) => {
+  const length = 10 - siblings.length;
+  for (let i = 0; i < length; i++) {
+    siblings.push(BigInt(0));
+  }
+  return siblings;
 }
+
+const generateMultiSignProof = async (
+  root,
+  point0,
+  point1,
+  point2,
+  pubKeyB,
+  sigB,
+  keyB,
+  siblingsB,
+  pubKeyC,
+  sigC,
+  keyC,
+  siblingsC
+) => {
+  // depth of smt : 10
+  const sibB = fulfillSiblings(siblingsB);
+  const sibC = fulfillSiblings(siblingsC);
+  const input = {
+    root: root,
+    pointA: [point0.x, point0.y],
+    pubKey: [pubKeyB, pubKeyC],
+    point: [[point1.x, point1.y], [point2.x, point2.y]],
+    sig: [[sigB.S, sigB.R8[0], sigB.R8[1]], [sigC.S, sigC.R8[0], sigC.R8[1]]],
+    key: [keyB, keyC],
+    siblings: [sibB, sibC]
+  };
+
+  const result = await groth16.fullProve(
+    input,
+    "./statics/ZkMultiSign.wasm",
+    "./statics/ZkMultiSign.zkey"
+  );
+
+  return {
+    public: result.publicSignals,
+    proof: packToSolidityProof(result.proof),
+  };
+};
 
 // transform to solidity proof format
 function packToSolidityProof(proof) {
-    return [
-        proof.pi_a[0],
-        proof.pi_a[1],
-        proof.pi_b[0][1],
-        proof.pi_b[0][0],
-        proof.pi_b[1][1],
-        proof.pi_b[1][0],
-        proof.pi_c[0],
-        proof.pi_c[1]
-    ];
+  return [
+    proof.pi_a[0],
+    proof.pi_a[1],
+    proof.pi_b[0][1],
+    proof.pi_b[0][0],
+    proof.pi_b[1][1],
+    proof.pi_b[1][0],
+    proof.pi_c[0],
+    proof.pi_c[1],
+  ];
 }
 
-
-module.exports = { Fq, generatePoints, generateProof }
-
+module.exports = {
+  Fq,
+  generatePoints,
+  generateMultiSignProof,
+  generateUpdateMemberProof,
+  generateInclusionOfMemberProof
+};

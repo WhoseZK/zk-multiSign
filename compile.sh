@@ -2,7 +2,7 @@
 
 algo=$1
 version=$2
-name=ZkMultiSign
+name=$3
 
 cd circuits
 
@@ -14,7 +14,6 @@ snarkjs ${algo} setup ./compile/${name}.r1cs ./compile/trust_setup/pot${version}
 cp ./compile/${name}.zkey ../hardhat/statics
 cp ../hardhat/statics/${name}.zkey ../frontend/public/zkp
 cp ../hardhat/statics/${name}.wasm ../frontend/public/zkp
-snarkjs zkey export verificationkey ./compile/${name}.zkey ./compile/verification/verification_key.json
 
 # export solidity verfier
-snarkjs zkey export solidityverifier ./compile/${name}.zkey ../hardhat/contracts/libraries/Verifier.sol
+snarkjs zkey export solidityverifier ./compile/${name}.zkey ../hardhat/contracts/libraries/${name}Verifier.sol
