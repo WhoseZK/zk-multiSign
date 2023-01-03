@@ -6,13 +6,13 @@ class User {
     }
 
     updateTreeDetail(treeResult, root, index) {
-        this.siblings = treeResult.siblings;
-        this.index = index;
-        this.root = root
+        this.siblings = treeResult.siblings.map(sibling => sibling.toString());
+        this.index = index.toString();
+        this.root = root.toString();
     }
 
     updatePoint(point) {
-        this.point = [point.x, point.y]
+        this.point = [point.x.toString(), point.y.toString()]
     }
 }
 

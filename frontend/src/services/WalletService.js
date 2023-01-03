@@ -2,9 +2,10 @@ import { ethers } from "ethers";
 
 const ABI = [
     "constructor(address _zkMultiSignVerifier, address _memberVerifier, address _inclusionVerifier, uint64 _duration, uint256 _memberRoot)",
-    "function raiseTransaction(uint256 _sharingKeys, address _destination, uint256 _amount, uint256[] calldata publicSignals, uint256[8] calldata proof) external",
-    "function updateRoot(uint256[] calldata publicSignals, uint256[8] calldata) external",
-    "function transferToken(address tokenAddress, uint256[] calldata publicSignals, uint256[8] calldata proof) external"
+    "event NewTransaction((uint256 x, uint256 y), uint256 indexed sharingKeys, address destination, address tokenAddress, uint256 amount)",
+    "function raiseTransaction(uint256 sharingKeys, address destination, address tokenAddress, uint256 amount, uint256[] calldata publicSignals, uint256[8] calldata proof) external",
+    "function updateRoot(uint256[] calldata publicSignals, uint256[8] calldata proof) external",
+    "function transferToken(uint256[] calldata publicSignals, uint256[8] calldata proof) external"
 ];
 
 const ERC20_ABI = [
@@ -70,6 +71,14 @@ const deployErc20 = async (provider, zkWalletAddress, erc20Address) => {
     return erc20
 };
 
+const getNewTransactions = async (zkwallet) => {
+    console.log("ZK wallet:", zkwallet);
+    const filter = zkwallet.filters.NewTransaction();
+    const query = await zkwallet.queryFilter(filter);
+    console.log(query);
+    return query;
+}
+
 // default setting: transfer ETH
 const tranferToken = async (contract) => {
     console.log("Contract Address:", contract.address);
@@ -116,5 +125,5 @@ const updateBalance = async (provider, zkwallet, erc20, destination) => {
 };
 
 
-export { deployZkWallet, initZkWallet, deployErc20, tranferToken, updateBalance }
+export { deployZkWallet, initZkWallet, deployErc20, tranferToken, updateBalance, getNewTransactions, ABI, ERC20_ABI }
 

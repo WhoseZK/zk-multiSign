@@ -14,6 +14,7 @@ const UserInputComponent = (props) => {
         }
         const user = createUser(username);
         onCreateUser(user);
+        setUsername("");
     }
 
     return (

@@ -9,6 +9,7 @@ const UserComponents = (props) => {
           user={user}
           inclusionOfMember={props.inclusionOfMember}
           onPointsChanged={props.onPointsChanged}
+          onSharingKeysChanged={props.onSharingKeysChanged}
           contract={props.contract}
         />
       ))}

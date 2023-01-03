@@ -15,7 +15,7 @@ contract ZkWallet is IZkWallet, MultiSign {
     // for limiting the transaction multiSign duration
     uint64 public duration; 
 
-    mapping(uint256 => TransactionDetails) transactions;
+    mapping(uint256 => TransactionDetails) public transactions;
 
     constructor(
         IVerifier _zkMultiSignVerifier,

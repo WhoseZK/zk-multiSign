@@ -1,14 +1,18 @@
 const { groth16 } = require("snarkjs");
 const { poseidon } = require("circomlibjs");
 
+const fulfillSibling = (siblings) => {
+  // depth of smt : 10
+  const length = 10 - siblings.length;
+  for (let i = 0; i < length; i++) {
+    siblings.push(BigInt(0).toString());
+  }
+}
+
 const generateInclusionOfMemberProof = async (
   user, sig, zkey
 ) => {
-  // depth of smt : 10
-  const length = 10 - user.siblings.length;
-  for (let i = 0; i < length; i++) {
-    user.siblings.push(BigInt(0));
-  }
+  fulfillSibling(user.siblings);
 
   const input = {
     pubKey: user.keyPair[0],
@@ -32,11 +36,7 @@ const generateInclusionOfMemberProof = async (
 const generateUpdateMemberProof = async (
   user, newPubKey, sig, zkey
 ) => {
-  // depth of smt : 10
-  const length = 10 - user.siblings.length;
-  for (let i = 0; i < length; i++) {
-    user.siblings.push(BigInt(0));
-  }
+  fulfillSibling(user.siblings);
 
   const input = {
     oldRoot: user.root,

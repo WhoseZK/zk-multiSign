@@ -6,7 +6,6 @@ import { eddsa, poseidon } from "circomlib";
 
 const UserComponent = (props) => {
   const [destination, setDestination] = useState("");
-  const [sharingKeys, setSharingKeys] = useState("");
   const [tokenAddress, setTokenAddress] = useState(ethers.constants.AddressZero);
   const [amount, setAmount] = useState(0);
 
@@ -14,6 +13,7 @@ const UserComponent = (props) => {
   const x = props.user.keyPair[0][0];
   const y = props.user.keyPair[0][1];
   const prvKey = props.user.keyPair[1];
+  // const point = props.user.point;
 
   const raiseTransaction = async (event) => {
     event.preventDefault();
@@ -29,16 +29,19 @@ const UserComponent = (props) => {
       const txn = await props.contract.raiseTransaction(
         result.sharingKeys,
         destination,
-        amount,
+        tokenAddress,
+        ethers.utils.parseEther(amount.toString()),
         publicSig,
         proof, 
         {
             gasLimit: 2_000_000
         }
       );
-      await txn.wait();
-      setSharingKeys(result.sharingKeys);
+      const txresult = await txn.wait();
+      console.log("Transaction:", txresult);
+      props.onSharingKeysChanged(result.sharingKeys);
       props.onPointsChanged(result.points);
+      console.log("sharing key:", result.sharingKeys);
     } catch (error) {
       console.log(`Raise Error in raiseTransaction ${error}`);
     }
@@ -54,6 +57,10 @@ const UserComponent = (props) => {
       <p>{y}</p>
       <label htmlFor="privatekey">Private Key: </label>
       <p>{prvKey}</p>
+      {/* <label htmlFor="pointx">Point x: </label>
+      <p>{point[0].toString()}</p>
+      <label htmlFor="privatekey">Point y: </label>
+      <p>{point[1].toString()}</p> */}
       <label htmlFor="destination">Destination: </label>
       <input
         value={destination}

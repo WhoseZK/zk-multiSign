@@ -90,9 +90,9 @@ const Relayer = (props) => {
 
             <div className="container">
                 <label htmlFor="erc20Addres">ZKWallet ETH Amount: </label>
-                <p>{zkwalletAmt.eth}</p>    
+                <p>{zkwalletAmt.eth / 1e18} ethers</p>    
                 <label htmlFor="erc20Addres">ZKWallet ERC20 Amount: </label>
-                <p>{zkwalletAmt.erc20}</p> 
+                <p>{zkwalletAmt.erc20 / 1e18} whoses</p> 
             </div>
 
             <button className="ml-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onClick={refreshZkWalletAmt}>

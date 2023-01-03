@@ -6,6 +6,7 @@ import useSWR from "swr";
 import UserComponents from "../src/components/UserComponents";
 import UserInputComponent from "../src/components/UserInputComponent";
 import Relayer from "../src/components/Relayer";
+import { getNewTransactions, ABI, ERC20_ABI } from "../src/services/WalletService";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -54,9 +55,9 @@ export default function Home() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       let contract;
       setProvider(provider);
-      if (localStorage.getItem("zkWalletAmt")) {
+      if (localStorage.getItem("zkWallet")) {
         contract = new ethers.Contract(
-          localStorage.getItem("zkWalletAmt"),
+          localStorage.getItem("zkWallet"),
           ABI,
           provider.getSigner()
         );
@@ -97,59 +98,69 @@ export default function Home() {
 
   // get Zkp automatically
   useEffect(() => {
-    if (data && users && points) {
-      for(let i=0;i<users.length;i++) {
-        if(typeof users[i] !== 'User') continue
-        users[i].updatePoint(points[i]);
+    const updateUser = async () => {
+      if (data && users && points) {
+        for (let i = 0; i < users.length; i++) {
+          //if(typeof users[i] !== 'User') continue
+          users[i].updatePoint(points[i]);
+        }
+        users.forEach((user) =>
+          localStorage.setItem(user.userName, JSON.stringify(user))
+        );
+        await getNewTransactions(contract);
       }
     }
+    updateUser();
   }, [points]);
 
   // update tree detail
   useEffect(() => {
-    users && users.forEach(async (user, index) => {
-      const result = await tree.find(index);
-      user.updateTreeDetail(result, tree.root, index);
-    })
-  }, [tree])
+    users &&
+      users.forEach(async (user, index) => {
+        const result = await tree.find(index);
+        user.updateTreeDetail(result, tree.root, index);
+      });
+  }, [tree]);
 
   const handleCreateUser = (user) => {
-     if(user.old && users.map(it => it.userName).includes(user.userName)) return
-     setUsers((prevState) => {
+    if (user.old && users.map((it) => it.userName).includes(user.userName))
+      return;
+    setUsers((prevState) => {
       return [user, ...prevState];
-    })
-  }
+    });
+  };
 
   const doAfterDeploy = (tree, zkWallet, zkWalletAmt) => {
-    
-    if(tree) setTree(tree);
-    if(zkWallet) setContract(zkWallet);
-    if(zkWalletAmt) setZkWalletAmt(zkWalletAmt);
-  }
+    if (tree) setTree(tree);
+    if (zkWallet) setContract(zkWallet);
+    if (zkWalletAmt) setZkWalletAmt(zkWalletAmt);
+  };
 
   return (
     <div className="container">
       <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
           <ConnectWallet />
-          <Relayer provider = {provider} 
-              userList = {users}
-              doAfterDepoly = {(tree, zkWallet, zkWalletAmt) => doAfterDeploy(tree, zkWallet, zkWalletAmt)}/>
+          <Relayer
+            provider={provider}
+            userList={users}
+            doAfterDepoly={(tree, zkWallet, zkWalletAmt) =>
+              doAfterDeploy(tree, zkWallet, zkWalletAmt)
+            }
+          />
         </div>
 
         <UserInputComponent onCreateUser={(user) => handleCreateUser(user)} />
-        {data &&
+        {data && (
           <UserComponents
             userList={users}
             inclusionOfMember={data.inclusionofmember}
             onPointsChanged={setPoints}
+            onSharingKeysChanged={setSharingKeys}
             contract={contract}
           />
-        }
-
-       
-
-      </main>  
+        )}
+      </main>
       {/* <main className="grid grid-cols-3 gap-6">
         <div className={styles.connect}>
           <ConnectWallet />
