@@ -13,11 +13,13 @@ const UserComponent = (props) => {
     ethers.constants.AddressZero
   );
   const [amount, setAmount] = useState(0);
-
+  const concatStr = (str) => {
+    return str.substring(0, 8) + "..." + str.slice(-8);
+  }
   const name = props.user.userName;
-  const x = props.user.keyPair[0][0];
-  const y = props.user.keyPair[0][1];
-  const prvKey = props.user.keyPair[1];
+  const x = concatStr(props.user.keyPair[0][0]);
+  const y = concatStr(props.user.keyPair[0][1]);
+  const prvKey = concatStr(props.user.keyPair[1]);
   const point = props.user.point;
   const eventLength = props.events.length;
   const zkpInputs = props.user.zkpInputs;
@@ -78,64 +80,80 @@ const UserComponent = (props) => {
   };
 
   return (
-    <div className="container">
-      <label htmlFor="sharingKey">Username: </label>
-      <p>{name}</p>
-      <label htmlFor="publicKey">Public Key x: </label>
-      <p>{x}</p>
-      <label htmlFor="publicKey">Public Key y: </label>
-      <p>{y}</p>
-      <label htmlFor="privatekey">Private Key: </label>
-      <p>{prvKey}</p>
-      {eventLength > 0 && (
-        <>
-          <label htmlFor="pointx">SSS Point x: </label>
-          <p>{point[0].toString()}</p>
-          <label htmlFor="privatekey">SSS Point y: </label>
-          <p>{point[1].toString()}</p>
-        </>
-      )}
-      <label htmlFor="destination">Destination: </label>
-      <input
-        value={destination}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        onChange={(event) => setDestination(event.target.value)}
-      />
-      <label htmlFor="tokenAddress">Token Address: </label>
-      <input
-        value={tokenAddress}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        onChange={(event) => setTokenAddress(event.target.value)}
-      />
-      <label htmlFor="amount">Amount: </label>
-      <input
-        value={amount}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        onChange={(event) => setAmount(event.target.value)}
-      />
-      <button
-        className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        onClick={raiseTransaction}
-      >
-        Raise Transaction
-      </button>
-      {eventLength > 0 && !isRaiser && (
+    <div className="shadow sm:overflow-hidden sm:rounded-md border border-gray-500 mt-2">
+      <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
+        <div className="grid grid-cols-2">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            Username:
+          </label>
+          <p>{name}</p>
+
+          <label htmlFor="publicKeyx" className="block text-sm font-medium text-gray-700">
+            Public Key x:
+          </label>
+          <p>{x}</p>
+          <label htmlFor="publicKeyy" className="block text-sm font-medium text-gray-700">
+            Public Key y:
+          </label>
+          <p>{y}</p>
+          <label htmlFor="privateKey" className="block text-sm font-medium text-gray-700">
+            Private Key:
+          </label>
+          <p>{prvKey}</p>
+          {eventLength > 0 && (
+            <>
+              <label htmlFor="ssspointx" className="block text-sm font-medium text-gray-700">
+                SSS Point x:
+              </label>
+              <p>{point[0].toString()}</p>
+              <label htmlFor="ssspointy" className="block text-sm font-medium text-gray-700">
+                SSS Point y:
+              </label>
+              <p>{point[1].toString()}</p>
+            </>
+          )}
+        </div>
+        <label htmlFor="destination">Destination: </label>
+        <input
+          value={destination}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          onChange={(event) => setDestination(event.target.value)}
+        />
+        <label htmlFor="tokenAddress">Token Address: </label>
+        <input
+          value={tokenAddress}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          onChange={(event) => setTokenAddress(event.target.value)}
+        />
+        <label htmlFor="amount">Amount: </label>
+        <input
+          value={amount}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          onChange={(event) => setAmount(event.target.value)}
+        />
         <button
           className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          onClick={approveHandler}
+          onClick={raiseTransaction}
         >
-          Approve Transaction
+          Raise Transaction
         </button>
-      )}
-      {zkpInputs && (
-        <button
-          className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          onClick={sendTransaction}
-        >
-          Send Transaction
-        </button>
-      )}
-    </div>
+        {eventLength > 0 && !isRaiser && (
+          <button
+            className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            onClick={approveHandler}
+          >
+            Approve Transaction
+          </button>
+        )}
+        {zkpInputs && (
+          <button
+            className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            onClick={sendTransaction}
+          >
+            Send Transaction
+          </button>
+        )}
+      </div></div>
   );
 };
 
