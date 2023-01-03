@@ -12,7 +12,8 @@ const MemberComponent = (props) => {
       />
       {props.approve && (
         <>
-          <label htmlFor="pointx">SSS point x-axis</label>
+          <div className="bg-green-500 rounded-md block">Approve by {props.name}</div>
+          {/* <label htmlFor="pointx">SSS point x-axis</label>
           <input
             type="text"
             value={props.point[0]}
@@ -46,7 +47,7 @@ const MemberComponent = (props) => {
             value={props.sig.R8[1]}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             disabled
-          />
+          /> */}
         </>
       )}
     </div>

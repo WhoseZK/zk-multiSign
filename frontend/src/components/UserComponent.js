@@ -20,6 +20,7 @@ const UserComponent = (props) => {
   const point = props.user.point;
   const eventLength = props.events.length;
   const zkpInputs = props.user.zkpInputs;
+  const afterExecTxn = props.afterExecTxn;
   const isRaiser = name == props.raiser;
 
   const concatStr = (str) => {
@@ -75,6 +76,7 @@ const UserComponent = (props) => {
       const txn = await props.contract.transferToken(publicSig, proof);
       await txn.wait();
       console.log("Transfer Token Succeed!");
+      afterExecTxn();
     } catch (error) {
       console.log(`Raise Error in raiseTransaction ${error}`);
     }
@@ -103,11 +105,11 @@ const UserComponent = (props) => {
           <p>{concatStr(prvKey)}</p>
           {eventLength > 0 && (
             <>
-              <label htmlFor="ssspointx" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="ssspointx" className="block text-sm font-medium text-red-600">
                 SSS Point x:
               </label>
               <p>{concatStr(point[0])}</p>
-              <label htmlFor="ssspointy" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="ssspointy" className="block text-sm font-medium text-red-600">
                 SSS Point y:
               </label>
               <p>{concatStr(point[1])}</p>
@@ -117,30 +119,30 @@ const UserComponent = (props) => {
         <label htmlFor="destination">Destination: </label>
         <input
           value={destination}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           onChange={(event) => setDestination(event.target.value)}
         />
         <label htmlFor="tokenAddress">Token Address: </label>
         <input
           value={tokenAddress}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           onChange={(event) => setTokenAddress(event.target.value)}
         />
         <label htmlFor="amount">Amount: </label>
         <input
           value={amount}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           onChange={(event) => setAmount(event.target.value)}
         />
         <button
-          className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           onClick={raiseTransaction}
         >
           Raise Transaction
         </button>
         {eventLength > 0 && !isRaiser && (
           <button
-            className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="bg-lime-300 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             onClick={approveHandler}
           >
             Approve Transaction
@@ -148,7 +150,7 @@ const UserComponent = (props) => {
         )}
         {zkpInputs && (
           <button
-            className="pt-5 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="bg-slate-300 rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             onClick={sendTransaction}
           >
             Send Transaction

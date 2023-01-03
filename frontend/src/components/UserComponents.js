@@ -16,6 +16,7 @@ const UserComponents = (props) => {
           contract={props.contract}
           events={props.events}
           raiser={props.raiser}
+          afterExecTxn={props.afterExecTxn}
         />
       ))}
     </>

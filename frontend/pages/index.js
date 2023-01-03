@@ -164,6 +164,20 @@ export default function Home() {
     if (zkWalletAmt) setZkWalletAmt(zkWalletAmt);
   };
 
+  const setSharingKeyAndResetApprove = (sharingKeys) => {
+    setSharingKeys(sharingKeys);
+    users.map(user => {user.approve = false});
+  } 
+
+  const afterExecTxn = () => {
+    users.map(user => {
+      user.zkpInputs = undefined;
+      user.approve = false;
+    });
+    setEvent([])
+    setTxRaiser("")
+  }
+
   return (
     <div className="bg-dark py-10">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -188,21 +202,21 @@ export default function Home() {
               inclusionOfMember={data.inclusionofmember}
               zkMultiSign={data.zkmultisign}
               onPointsChanged={setPoints}
-              onSharingKeysChanged={setSharingKeys}
+              onSharingKeysChanged={setSharingKeyAndResetApprove}
               onTransactionRaised={setTxRaiser}
               onSumbitApprove={(user) => handleApprove(user)}
               contract={contract}
               events={event}
               raiser={txRaiser}
+              afterExecTxn={afterExecTxn}
             />
           )}
         </div>
 
         <EventComponents eventList={event} />
 
-
         {/* <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-16 lg:px-8">
-          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+          <div className="bg-slate-300 bg-green-500 bg-lime-300 text-center mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
               <button
                 type="submit"
@@ -255,7 +269,7 @@ export default function Home() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Photo</label>
+                    <label className="block text-sm font-medium text-red-600 text-gray-700">Photo</label>
                     <div className="mt-1 flex items-center">
                       <span className="inline-block h-12 w-12 overflow-hidden rounded-full bg-gray-100">
                         <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
