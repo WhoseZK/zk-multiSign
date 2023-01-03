@@ -42,6 +42,7 @@ contract ZkWallet is IZkWallet, MultiSign {
     function raiseTransaction(
         uint256 _sharingKeys,
         address _destination,
+        address _tokenAddress,
         uint256 _amount,
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
@@ -53,6 +54,7 @@ contract ZkWallet is IZkWallet, MultiSign {
 
         transactions[_sharingKeys] = TransactionDetails({
             destination: _destination,
+            tokenAddress: _tokenAddress,
             amount: _amount,
             expiredTime: uint64(duration + block.timestamp)
         });
@@ -62,11 +64,10 @@ contract ZkWallet is IZkWallet, MultiSign {
             y: publicSignals[1]
         });
 
-        emit NewTransaction(pubKey, _sharingKeys, _destination, _amount);
+        emit NewTransaction(pubKey, _sharingKeys, _destination, _tokenAddress, _amount);
     }
 
     function transferToken(
-        address tokenAddress,
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external override onlyApprove(publicSignals, proof) {
@@ -75,13 +76,13 @@ contract ZkWallet is IZkWallet, MultiSign {
         // memeber can check if transction is sent successfully
         // by logging the send transaction event
         if (transaction.expiredTime > block.timestamp) {
-            if (tokenAddress == address(0)) {
+            if (transaction.tokenAddress == address(0)) {
                 // transfer eth
                 (bool result, ) = transaction.destination.call{value: transaction.amount}("");
                 if (!result) revert FailedToSendEthers();
             } else {
                 // transfer erc20
-                IERC20(tokenAddress).transfer(transaction.destination, transaction.amount);
+                IERC20(transaction.tokenAddress).transfer(transaction.destination, transaction.amount);
             }
 
             emit SendTransaction(publicSignals[0], true);

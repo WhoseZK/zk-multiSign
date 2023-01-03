@@ -12,6 +12,7 @@ interface IZkWallet {
 
     struct TransactionDetails {
         address destination;
+        address tokenAddress;
         uint256 amount;
         uint64 expiredTime;
     }
@@ -22,6 +23,7 @@ interface IZkWallet {
         PubKey pubKey,
         uint256 indexed sharingKeys,
         address destination,
+        address tokenAddress,
         uint256 amount
     );
 
@@ -35,13 +37,13 @@ interface IZkWallet {
     function raiseTransaction(
         uint256 sharingKeys,
         address destination,
+        address tokenAddress,
         uint256 amount,
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external;
 
     function transferToken(
-        address tokenAddress,
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external;

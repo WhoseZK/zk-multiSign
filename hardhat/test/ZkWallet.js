@@ -103,13 +103,14 @@ describe("ZkWallet", function () {
       const tx = await zkWallet.raiseTransaction(
         sharingKeys,
         destination,
+        erc20.address,
         txnAmt,
         public,
         proof
       );
 
       await expect(tx).to.emit(zkWallet, "NewTransaction")
-        .withArgs(([pubKey[0], pubKey[1]]), sharingKeys, destination, txnAmt);
+        .withArgs(([pubKey[0], pubKey[1]]), sharingKeys, destination, erc20.address, txnAmt);
     });
 
     it("Participant provide their key(point) to generate proof", async () => {
@@ -160,13 +161,13 @@ describe("ZkWallet", function () {
 
       // transfer erc20
       await expect(() =>
-        zkWallet.transferToken(erc20.address, mockPublic, mockProof)
+        zkWallet.transferToken(mockPublic, mockProof)
       ).to.changeTokenBalance(erc20, destination, TRANSFER_AMOUNT);
     });
 
     it("Execute the same txn again", async () => {
       // since repeat transaction
-      await expect(zkWallet.transferToken(erc20.address, mockPublic, mockProof)).to.be
+      await expect(zkWallet.transferToken(mockPublic, mockProof)).to.be
         .reverted;
     });
 
