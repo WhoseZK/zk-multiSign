@@ -34,7 +34,9 @@ const UserComponent = (props) => {
 
   const raiseTransaction = async (event) => {
     event.preventDefault();
-    const signature = eddsa.signMiMC(prvKey, poseidon([BigInt(x), BigInt(y)]));
+    const xx = props.user.keyPair[0][0];
+    const yy = props.user.keyPair[0][1];
+    const signature = eddsa.signMiMC(prvKey, poseidon([BigInt(xx), BigInt(yy)]));
     const { publicSig, proof } = await generateInclusionOfMemberProof(
       props.user,
       signature,
@@ -153,7 +155,8 @@ const UserComponent = (props) => {
             Send Transaction
           </button>
         )}
-      </div></div>
+      </div>
+    </div>
   );
 };
 
