@@ -13,17 +13,18 @@ const UserComponent = (props) => {
     ethers.constants.AddressZero
   );
   const [amount, setAmount] = useState(0);
-  const concatStr = (str) => {
-    return str.substring(0, 8) + "..." + str.slice(-8);
-  }
   const name = props.user.userName;
-  const x = concatStr(props.user.keyPair[0][0]);
-  const y = concatStr(props.user.keyPair[0][1]);
-  const prvKey = concatStr(props.user.keyPair[1]);
+  const x = props.user.keyPair[0][0];
+  const y = props.user.keyPair[0][1];
+  const prvKey = props.user.keyPair[1];
   const point = props.user.point;
   const eventLength = props.events.length;
   const zkpInputs = props.user.zkpInputs;
   const isRaiser = name == props.raiser;
+
+  const concatStr = (str) => {
+    return str.substring(0, 8) + "..." + str.slice(-8);
+  }
 
   const approveHandler = (event) => {
     event.preventDefault();
@@ -34,9 +35,7 @@ const UserComponent = (props) => {
 
   const raiseTransaction = async (event) => {
     event.preventDefault();
-    const xx = props.user.keyPair[0][0];
-    const yy = props.user.keyPair[0][1];
-    const signature = eddsa.signMiMC(prvKey, poseidon([BigInt(xx), BigInt(yy)]));
+    const signature = eddsa.signMiMC(prvKey, poseidon([BigInt(x), BigInt(y)]));
     const { publicSig, proof } = await generateInclusionOfMemberProof(
       props.user,
       signature,
@@ -93,25 +92,25 @@ const UserComponent = (props) => {
           <label htmlFor="publicKeyx" className="block text-sm font-medium text-gray-700">
             Public Key x:
           </label>
-          <p>{x}</p>
+          <p>{concatStr(x)}</p>
           <label htmlFor="publicKeyy" className="block text-sm font-medium text-gray-700">
             Public Key y:
           </label>
-          <p>{y}</p>
+          <p>{concatStr(y)}</p>
           <label htmlFor="privateKey" className="block text-sm font-medium text-gray-700">
             Private Key:
           </label>
-          <p>{prvKey}</p>
+          <p>{concatStr(prvKey)}</p>
           {eventLength > 0 && (
             <>
               <label htmlFor="ssspointx" className="block text-sm font-medium text-gray-700">
                 SSS Point x:
               </label>
-              <p>{point[0].toString()}</p>
+              <p>{concatStr(point[0])}</p>
               <label htmlFor="ssspointy" className="block text-sm font-medium text-gray-700">
                 SSS Point y:
               </label>
-              <p>{point[1].toString()}</p>
+              <p>{concatStr(point[1])}</p>
             </>
           )}
         </div>

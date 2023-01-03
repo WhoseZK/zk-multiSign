@@ -201,7 +201,7 @@ export default function Home() {
         <EventComponents eventList={event} />
 
 
-        <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-16 lg:px-8">
+        {/* <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-16 lg:px-8">
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
               <button
@@ -316,7 +316,7 @@ export default function Home() {
                 </div>
               </div>
             </form>
-          </div>
+          </div> */}
 
 
       </div>
