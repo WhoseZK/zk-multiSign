@@ -1,8 +1,12 @@
+import { ethers } from "ethers";
+
 const EventComponent = (props) => {
 
   const concatStr = (str) => {
     return str.substring(0, 8) + "..." + str.slice(-8);
   }
+
+  const isEth = props.tokenAddress == ethers.constants.AddressZero;
 
   return (
     <div className="shadow sm:overflow-hidden sm:rounded-md border border-gray-500 mt-2">
@@ -19,7 +23,7 @@ const EventComponent = (props) => {
           <label htmlFor="tokenAddress" className="block text-sm font-medium text-gray-700">Token Address: </label>
           <p>{concatStr(props.tokenAddress)}</p>
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount: </label>
-          <p>{props.amount}</p>
+          <p>{props.amount/1e18} {isEth ? "ethers" : "whoses"}</p>
         </div>
       </div>
     </div>

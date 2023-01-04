@@ -81,23 +81,6 @@ const getNewTransactions = async (zkwallet) => {
   return query;
 };
 
-// default setting: transfer ETH
-const tranferToken = async (contract) => {
-  console.log("Contract Address:", contract.address);
-  let txn = await contract.transferToken(
-    tokenAddress,
-    destination,
-    ethers.utils.parseUnits(amount, "ether"),
-    publicSignals,
-    proof,
-    { gasLimit: 2_000_000 }
-  );
-  console.log(txn);
-  txn.wait((confirm = 1)).then(() => {
-    return true;
-  });
-};
-
 // update balance for Wallet, Destination, ZkWallet
 const updateBalance = async (provider, zkwallet, erc20, destination) => {
   // wallet amount
@@ -119,8 +102,6 @@ const updateBalance = async (provider, zkwallet, erc20, destination) => {
     };
   }
 
-  console.log(eth_balance, erc20_balance);
-
   return {
     eth: eth_balance,
     erc20: erc20_balance,
@@ -131,7 +112,6 @@ export {
   deployZkWallet,
   initZkWallet,
   deployErc20,
-  tranferToken,
   updateBalance,
   getNewTransactions,
   ABI,

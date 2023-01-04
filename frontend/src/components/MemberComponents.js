@@ -11,6 +11,7 @@ const MemberComponents = (props) => {
           point={user.point}
           sig={user.sig}
           approve={user.approve}
+          raiser={props.raiser}
         />
       ))}
     </>
