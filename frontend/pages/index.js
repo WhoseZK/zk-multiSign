@@ -1,6 +1,5 @@
 import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { useState, useEffect } from "react";
-import styles from "../styles/Home.module.css";
 import { ethers } from "ethers";
 import useSWR from "swr";
 import UserComponents from "../src/components/UserComponents";
@@ -27,18 +26,8 @@ export default function Home() {
   // constructor args
   const [tree, setTree] = useState();
   const [sharingKeys, setSharingKeys] = useState();
-  // const [memberRoot, setMemberRoot] = useState();
   const [points, setPoints] = useState([]);
   const [destination, setDestination] = useState();
-
-  // deploy ERC20
-  const [mockErc20, setMockErc20] = useState();
-
-  // check wallet amount
-  const [zkWalletAmt, setZkWalletAmt] = useState({
-    eth: "Loading",
-    erc20: "Loading",
-  });
 
   // initial all attributes
   useEffect(() => {
@@ -68,24 +57,6 @@ export default function Home() {
     };
     envInit();
   }, []);
-
-  // update destination detail
-  useEffect(() => {
-    const updateDestination = async () => {
-      const eth = (await provider.getBalance(destination)).toString();
-      const erc20 = (await mockErc20.balanceOf(destination)).toString();
-      setDestinationAmt((prevState) => {
-        return {
-          ...prevState,
-          eth: eth,
-          erc20: erc20,
-        };
-      });
-    };
-    if (provider) {
-      updateDestination();
-    }
-  }, [destination]);
 
   // get Zkp automatically
   useEffect(() => {
@@ -158,16 +129,20 @@ export default function Home() {
     })
   }
 
-  const doAfterDeploy = (tree, zkWallet, zkWalletAmt) => {
+  const doAfterDeploy = (tree, zkWallet) => {
     if (tree) setTree(tree);
     if (zkWallet) setContract(zkWallet);
-    if (zkWalletAmt) setZkWalletAmt(zkWalletAmt);
   };
 
   const setSharingKeyAndResetApprove = (sharingKeys) => {
-    setSharingKeys(sharingKeys);
-    users.map(user => {user.approve = false});
+    setSharingKeys(sharingKeys)
+    users.map(user => {user.approve = false})
   } 
+
+  const afterTxnRaised = (raiser, destination) => {
+    setTxRaiser(raiser)
+    setDestination(destination)
+  }
 
   const afterExecTxn = () => {
     users.map(user => {
@@ -187,9 +162,11 @@ export default function Home() {
         <Relayer
           provider={provider}
           userList={users}
+          raiser={txRaiser}
+          destination={destination}
           forwardZkpInputs={(zkpInputs) => handleZkpInputs(zkpInputs)}
-          doAfterDepoly={(tree, zkWallet, zkWalletAmt) =>
-            doAfterDeploy(tree, zkWallet, zkWalletAmt)
+          doAfterDepoly={(tree, zkWallet) =>
+            doAfterDeploy(tree, zkWallet)
           }
         />
 
@@ -203,7 +180,7 @@ export default function Home() {
               zkMultiSign={data.zkmultisign}
               onPointsChanged={setPoints}
               onSharingKeysChanged={setSharingKeyAndResetApprove}
-              onTransactionRaised={setTxRaiser}
+              onTransactionRaised={(raiser, destination) => afterTxnRaised(raiser, destination)}
               onSumbitApprove={(user) => handleApprove(user)}
               contract={contract}
               events={event}

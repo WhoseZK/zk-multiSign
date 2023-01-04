@@ -56,7 +56,7 @@ const UserComponent = (props) => {
       await txn.wait();
       props.onSharingKeysChanged(result.sharingKeys);
       props.onPointsChanged(result.points);
-      props.onTransactionRaised(props.user.userName);
+      props.onTransactionRaised(props.user.userName, destination);
       console.log("sharing key:", result.sharingKeys);
     } catch (error) {
       console.log(`Raise Error in raiseTransaction ${error}`);
@@ -77,6 +77,7 @@ const UserComponent = (props) => {
       await txn.wait();
       console.log("Transfer Token Succeed!");
       afterExecTxn();
+      setDestination("");
     } catch (error) {
       console.log(`Raise Error in raiseTransaction ${error}`);
     }
