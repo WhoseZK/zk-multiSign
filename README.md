@@ -1,3 +1,4 @@
+Please see [the power point](https://docs.google.com/presentation/d/1I1bcazjK74sQx2VjOAX-NzNMzVvrZ210xgjGGfErXHc/edit#slide=id.p) for the flow
 1. clone the project
 ```sh
 $ git clone git@github.com:WhoseZK/zk-wallet.git
