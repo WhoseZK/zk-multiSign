@@ -171,11 +171,5 @@ describe("ZkWallet", function () {
         .reverted;
     });
 
-    it("Expiry transaction", async () => {
-      
-
-
-    });
-
   });
 });

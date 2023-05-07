@@ -24,9 +24,9 @@ abstract contract MultiSign {
         if (nullifiers[publicSignals[0]]) revert DuplicateSharingKeys();
 
         if (!iVerifier.verifyProof(publicSignals, proof)) revert InvalidProof();
-        _;
 
-        nullifiers[publicSignals[0]] = true;
+        nullifiers[publicSignals[0]] = true; // to avoid re-entrancy attack
+        _;
     }
 
     function _checkPolynominal(uint256 _sharingKeys) internal virtual returns (bool) {
